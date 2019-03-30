@@ -11,21 +11,23 @@ static CHARCOAL: Color = Color { r: 46, g: 46, b: 46, a: 255 };
 
 struct Game {
 	player: car::Car,
-	pillars: Vec<pillar::Pillar>
+	pillars: Vec<pillar::Pillar>,
+	score: u32
 }
 
 impl Default for Game {
 	fn default() -> Game {
 		Game {
 			player: car::Car::new(Vector2 { x: 300.0, y: 300.0 }),
-			pillars: vec![pillar::Pillar::default()]
+			pillars: vec![pillar::Pillar::default()],
+			score: 0
 		}
 	}
 }
 
 impl Game {
 	pub fn new(p: car::Car) -> Game {
-		Game { player: p, pillars: vec![] }
+		Game { player: p, pillars: vec![], ..Default::default() }
 	}
 
 	pub fn draw(&self, rl: &RaylibHandle) {
@@ -38,30 +40,40 @@ impl Game {
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
 		self.player.update(rl, dt);
+		let low = self.get_closest_pillar_to_player();
+	}
+
+	fn get_closest_pillar_to_player(&self) -> (i32, f32) {
+		let mut lowest = (-1, -1.0);
+		for (i, p) in self.pillars.iter().enumerate() {
+			let dist = p.distance_to(self.player.pos);
+			if dist < lowest.1 || lowest.0 == -1 {
+				lowest = (i as i32, dist);
+			}
+		}
+		lowest
 	}
 }
 
 fn main() {
-		let rl = raylib::init()
-				.size(1000, 800)
-				.title("Idk")
-				.build();
+	let rl = raylib::init()
+			.size(1000, 800)
+			.title("Drift")
+			.build();
 
-		rl.set_target_fps(144);
+	rl.set_target_fps(60);
 
-		let mut g = Game::default();
+	let mut g = Game::default();
 
+	while !rl.window_should_close() {
+		g.update(&rl, rl.get_frame_time());
 
+		rl.begin_drawing();
+		rl.clear_background(BG_COLOR);
+		g.draw(&rl);
 
-		while !rl.window_should_close() {
-				g.update(&rl, rl.get_frame_time());
-
-				rl.begin_drawing();
-				rl.clear_background(BG_COLOR);
-				g.draw(&rl);
-
-				rl.draw_fps(10, 10);
-				rl.end_drawing();
-		}
+		rl.draw_fps(10, 10);
+		rl.end_drawing();
+	}
 }
 

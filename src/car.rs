@@ -1,11 +1,11 @@
-use raylib::{Vector2, RaylibHandle, Rectangle, Color};
+use raylib::{Vector2, RaylibHandle, Rectangle};
 use raylib::consts;
 
 use crate::misc;
 use crate::RED_1;
 
 const CAR_ACC: f32 = 500.0;
-const CAR_W: f32 = 23.0;
+const CAR_W: f32 = 24.0;
 const CAR_H: f32 = 40.0;
 const HALF_CAR_W: f32 = CAR_W/2.0;
 const HALF_CAR_H: f32 = CAR_H/2.0;
@@ -13,7 +13,7 @@ const CAR_TURN_SPD: f32 = consts::PI as f32/1.2;
 const CAR_RESISTANCE: f32 = 2.718;
 
 pub struct Car {
-	pos: Vector2,
+	pub pos: Vector2,
 	vel: Vector2,
 	angle: f32,
 	perp: f32   // How perpendicular the car is to it's velocity
@@ -36,7 +36,7 @@ impl Car {
 								width: CAR_W,
 								height: CAR_H
 							  },
-							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H },
+							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H+5.0 },
 							  -self.angle * consts::RAD2DEG as f32,
 							  RED_1);
 	}

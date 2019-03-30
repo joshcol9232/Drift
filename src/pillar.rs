@@ -5,8 +5,8 @@ use crate::{RED_1, BG_COLOR};
 const DEF_PILLAR_RADIUS: f32 = 5.0;
 
 pub struct Pillar {    // Pillars for the player to drift around
-	pos: Vector2,
-	radius: f32
+	pub pos: Vector2,
+	pub radius: f32
 }
 
 impl Default for Pillar {
@@ -29,5 +29,10 @@ impl Pillar {
 	pub fn draw(&self, rl: &RaylibHandle) {
 		rl.draw_circle_v(self.pos, self.radius, RED_1);
 		rl.draw_circle_v(self.pos, self.radius - 2.0, BG_COLOR);   // Leaves red circle with line thickness of 2
+	}
+
+	#[inline(always)]
+	pub fn distance_to(&self, point: Vector2) -> f32 {
+		point.distance_to(self.pos)
 	}
 }
