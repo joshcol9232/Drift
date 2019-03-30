@@ -2,6 +2,7 @@ use raylib::{Vector2, RaylibHandle, Rectangle, Color};
 use raylib::consts;
 
 use crate::misc;
+use crate::RED_1;
 
 const CAR_ACC: f32 = 500.0;
 const CAR_W: f32 = 23.0;
@@ -14,7 +15,6 @@ const CAR_RESISTANCE: f32 = 2.718;
 pub struct Car {
 	pos: Vector2,
 	vel: Vector2,
-	forward_vel: f32,
 	angle: f32,
 	perp: f32   // How perpendicular the car is to it's velocity
 }
@@ -24,7 +24,6 @@ impl Car {
 		Car {
 			pos: p,
 			vel: Vector2::zero(),
-			forward_vel: 0.0,
 			angle: consts::PI as f32,
 			perp: 0.0
 		}
@@ -39,7 +38,7 @@ impl Car {
 							  },
 							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H },
 							  -self.angle * consts::RAD2DEG as f32,
-							  Color::RED);
+							  RED_1);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
@@ -73,13 +72,16 @@ impl Car {
 	}
 
 	fn turn(&mut self, dt: f32, amount: f32) {
-		self.angle += dt * amount * (CAR_TURN_SPD * (1.5 - self.perp.powf(2.0)/1.2));
+		self.angle += dt * amount * (CAR_TURN_SPD * (1.5 - self.perp));
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
-		self.perp = 1.0 - (self.vel/self.vel.length()).dot(Vector2 { x: self.angle.sin(), y: self.angle.cos() }).abs();
-		println!("Perp: {}", self.perp);
-
+		self.perp = self.get_perp_value();
 		self.vel.scale(CAR_RESISTANCE.powf(-dt * (self.perp + 1.0)));
+	}
+
+	#[inline(always)]
+	fn get_perp_value(&self) -> f32 {
+		1.0 - (self.vel/self.vel.length()).dot(Vector2 { x: self.angle.sin(), y: self.angle.cos() }).abs()
 	}
 }
