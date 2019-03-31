@@ -61,7 +61,7 @@ fn main() {
 			.title("Drift")
 			.build();
 
-	rl.set_target_fps(60);
+	rl.set_target_fps(144);
 
 	let mut g = Game::default();
 
