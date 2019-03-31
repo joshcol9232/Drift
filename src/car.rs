@@ -9,13 +9,15 @@ const CAR_W: f32 = 24.0;
 const CAR_H: f32 = 40.0;
 const HALF_CAR_W: f32 = CAR_W/2.0;
 const HALF_CAR_H: f32 = CAR_H/2.0;
-const CAR_TURN_SPD: f32 = consts::PI as f32/1.2;
+const CAR_TURN_SPD: f32 = consts::PI as f32/3.5;
 const CAR_RESISTANCE: f32 = 2.718;
 
 pub struct Car {
 	pub pos: Vector2,
 	vel: Vector2,
+	vel_mag: f32,
 	angle: f32,
+	angular_vel: f32,
 	perp: f32   // How perpendicular the car is to it's velocity
 }
 
@@ -24,7 +26,9 @@ impl Car {
 		Car {
 			pos: p,
 			vel: Vector2::zero(),
+			vel_mag: 0.0,
 			angle: consts::PI as f32,
+			angular_vel: 0.0,
 			perp: 0.0
 		}
 	}
@@ -36,7 +40,7 @@ impl Car {
 								width: CAR_W,
 								height: CAR_H
 							  },
-							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H+5.0 },
+							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H + 5.0 },
 							  -self.angle * consts::RAD2DEG as f32,
 							  RED_1);
 	}
@@ -55,13 +59,16 @@ impl Car {
 			self.turn(dt, -1.0);
 		}
 
-		let vel_len = self.vel.length();
-		if vel_len > 0.0 {
+		self.vel_mag = self.vel.length();
+		if self.vel_mag > 0.0 {
 			self.apply_resistance(dt);
-			if vel_len < 0.01 {
+			if self.vel_mag < 0.1 {
 				self.vel = Vector2::zero();
 			}
 		}
+
+		self.angular_vel *= (500.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
+		self.angle += self.angular_vel;
 		
 		self.pos = self.pos + self.vel.scale_by(dt);
 	}
@@ -72,16 +79,24 @@ impl Car {
 	}
 
 	fn turn(&mut self, dt: f32, amount: f32) {
-		self.angle += dt * amount * (CAR_TURN_SPD * (1.5 - self.perp));
+		self.angular_vel += dt * amount * CAR_TURN_SPD;
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
 		self.perp = self.get_perp_value();
-		self.vel.scale(CAR_RESISTANCE.powf(-dt * (self.perp + 1.0)));
+		let d_hor_v = -self.perp * dt * 500.0;
+		println!("dv: {}", d_hor_v);
+		let ang = self.angle + consts::PI as f32/2.0;
+
+		let dv = Vector2 { x: d_hor_v * ang.sin(), y: d_hor_v * ang.cos() };
+		self.vel += dv;
+		println!("dv: {} {}", dv.x, dv.y);
+		
+		self.vel.scale(CAR_RESISTANCE.powf(-dt));   // All deceleration
 	}
 
-	#[inline(always)]
 	fn get_perp_value(&self) -> f32 {
-		1.0 - (self.vel/self.vel.length()).dot(Vector2 { x: self.angle.sin(), y: self.angle.cos() }).abs()
+		let ang = self.angle + consts::PI as f32/2.0;
+		(self.vel/self.vel_mag).dot(Vector2 { x: ang.sin(), y: ang.cos() })
 	}
 }
