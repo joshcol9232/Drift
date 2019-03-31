@@ -5,10 +5,10 @@ use crate::misc;
 use crate::RED_1;
 
 const CAR_ACC: f32 = 600.0;
-const CAR_W: f32 = 24.0;
-const CAR_H: f32 = 40.0;
-const HALF_CAR_W: f32 = CAR_W/2.0;
-const HALF_CAR_H: f32 = CAR_H/2.0;
+pub const CAR_W: f32 = 24.0;
+pub const CAR_H: f32 = 40.0;
+pub const HALF_CAR_W: f32 = CAR_W/2.0;
+pub const HALF_CAR_H: f32 = CAR_H/2.0;
 const CAR_TURN_SPD: f32 = 10.0 * consts::PI as f32;
 const CAR_RESISTANCE: f32 = 2.718;
 const HALF_PI: f32 = (consts::PI/2.0) as f32;
@@ -82,7 +82,7 @@ impl Car {
 	}
 
 	fn turn(&mut self, dt: f32, amount: f32) {
-		if self.angular_vel.abs() < 4.2 {
+		if self.angular_vel.abs() < 3.7 {
 			self.angular_vel += dt * amount * CAR_TURN_SPD;
 		}
 	}

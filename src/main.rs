@@ -1,4 +1,4 @@
-use raylib::{Color, Vector2, RaylibHandle};
+use raylib::{Color, Vector2, RaylibHandle, Rectangle};
  
 mod car;
 mod pillar;
@@ -8,6 +8,8 @@ static BG_COLOR: Color = Color { r: 230, g: 230, b: 220, a: 255 };
 static RED_1: Color = Color { r: 190, g: 36, b: 25, a: 255 };
 static RED_2: Color = Color { r: 232, g: 89, b: 79, a: 255 };
 static CHARCOAL: Color = Color { r: 46, g: 46, b: 46, a: 255 };
+
+const POINT_DIST_THRESHOLD: f32 = 70.0;
 
 struct Game {
 	player: car::Car,
@@ -19,7 +21,7 @@ impl Default for Game {
 	fn default() -> Game {
 		Game {
 			player: car::Car::new(Vector2 { x: 300.0, y: 300.0 }),
-			pillars: vec![pillar::Pillar::default()],
+			pillars: vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 600.0, y: 400.0 }, 5.0)],
 			score: 0
 		}
 	}
@@ -32,6 +34,7 @@ impl Game {
 
 	pub fn draw(&self, rl: &RaylibHandle) {
 		for p in self.pillars.iter() {
+			rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
 			p.draw(rl);
 		}
 
@@ -40,18 +43,22 @@ impl Game {
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
 		self.player.update(rl, dt);
-		let low = self.get_closest_pillar_to_player();
+		let closest = self.get_closest_pillar_to_player();
+		println!("Closest: {} {}", closest.1, closest.0);
+		if closest.1 < POINT_DIST_THRESHOLD {
+			println!("Can score points");
+		}
 	}
 
 	fn get_closest_pillar_to_player(&self) -> (i32, f32) {
-		let mut lowest = (-1, -1.0);
+		let mut closest = (-1, -1.0);
 		for (i, p) in self.pillars.iter().enumerate() {
 			let dist = p.distance_to(self.player.pos);
-			if dist < lowest.1 || lowest.0 == -1 {
-				lowest = (i as i32, dist);
+			if dist < closest.1 || closest.0 == -1 {
+				closest = (i as i32, dist);
 			}
 		}
-		lowest
+		closest
 	}
 }
 
