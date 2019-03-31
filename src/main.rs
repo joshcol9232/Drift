@@ -1,6 +1,7 @@
 use raylib::{Color, Vector2, RaylibHandle, Rectangle};
  
 mod car;
+mod drift_trail;
 mod pillar;
 mod misc;
 
@@ -14,6 +15,7 @@ const POINT_DIST_THRESHOLD: f32 = 70.0;
 struct Game {
 	player: car::Car,
 	pillars: Vec<pillar::Pillar>,
+	trail_nodes: Vec<drift_trail::DriftTrailSet>,
 	score: u32
 }
 
@@ -22,6 +24,7 @@ impl Default for Game {
 		Game {
 			player: car::Car::new(Vector2 { x: 300.0, y: 300.0 }),
 			pillars: vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 600.0, y: 400.0 }, 5.0)],
+			trail_nodes: vec![],
 			score: 0
 		}
 	}
@@ -29,12 +32,18 @@ impl Default for Game {
 
 impl Game {
 	pub fn new(p: car::Car) -> Game {
-		Game { player: p, pillars: vec![], ..Default::default() }
+		Game {
+			player: p,
+			pillars: vec![],
+			..Default::default()
+		}
 	}
 
 	pub fn draw(&self, rl: &RaylibHandle) {
+		self.draw_trails(rl);
+
 		for p in self.pillars.iter() {
-			rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
+			//rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
 			p.draw(rl);
 		}
 
@@ -43,10 +52,36 @@ impl Game {
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
 		self.player.update(rl, dt);
-		let closest = self.get_closest_pillar_to_player();
-		println!("Closest: {} {}", closest.1, closest.0);
-		if closest.1 < POINT_DIST_THRESHOLD {
-			println!("Can score points");
+		self.place_trails(rl);
+	}
+
+	fn remove_dead_trail_nodes(&mut self) {
+
+	}
+
+	fn place_trails(&mut self, rl: &RaylibHandle) {
+		if self.player.perp.abs() > 0.4 && self.player.angular_vel.abs() > 0.5 {
+			self.trail_nodes.push( drift_trail::DriftTrailSet {
+				left_front: Vector2 { x: self.player.pos.x - car::HALF_CAR_W, y: self.player.pos.y - car::HALF_CAR_H },
+				right_front: self.player.pos,
+				left_back: self.player.pos,
+				right_back: self.player.pos,
+				time_created: rl.get_time()
+			});
+		}
+	}
+
+	fn draw_trails(&self, rl: &RaylibHandle) {
+		let mut last: &drift_trail::DriftTrailSet = &drift_trail::DriftTrailSet::default();
+		for (i, t) in self.trail_nodes.iter().enumerate() {
+			if i > 0 && last.left_front.distance_to(t.left_front) < 30.0 {
+				rl.draw_line_ex(last.left_front, t.left_front, 5.0, CHARCOAL);  // Left front
+				//rl.draw_line_ex(last.pos, t.pos, 5.0, CHARCOAL);  // Right front
+				//rl.draw_line_ex(last.pos, t.pos, 5.0, CHARCOAL);  // Left back
+				//rl.draw_line_ex(last.pos, t.pos, 5.0, CHARCOAL);  // Right back
+			}
+
+			last = t;
 		}
 	}
 
@@ -68,7 +103,7 @@ fn main() {
 			.title("Drift")
 			.build();
 
-	rl.set_target_fps(144);
+	rl.set_target_fps(60);
 
 	let mut g = Game::default();
 

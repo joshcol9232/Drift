@@ -3,8 +3,9 @@ use raylib::consts;
 
 use crate::misc;
 use crate::RED_1;
+use crate::drift_trail;
 
-const CAR_ACC: f32 = 600.0;
+const CAR_ACC: f32 = 500.0;
 pub const CAR_W: f32 = 24.0;
 pub const CAR_H: f32 = 40.0;
 pub const HALF_CAR_W: f32 = CAR_W/2.0;
@@ -18,8 +19,8 @@ pub struct Car {
 	vel: Vector2,
 	vel_mag: f32,
 	angle: f32,
-	angular_vel: f32,
-	perp: f32   // How perpendicular the car is to it's velocity
+	pub angular_vel: f32,
+	pub perp: f32   // How perpendicular the car is to it's velocity
 }
 
 impl Car {
@@ -53,24 +54,24 @@ impl Car {
 		if rl.is_key_down(consts::KEY_S as i32) {
 			self.accelerate(dt, -1.0);
 		}
-		if rl.is_key_down(consts::KEY_A as i32) {
-			self.turn(dt, 1.0);
-		}
-		if rl.is_key_down(consts::KEY_D as i32) {
-			self.turn(dt, -1.0);
-		}
-
 
 		self.vel_mag = self.vel.length();
 		if self.vel_mag > 0.0 {
 			self.perp = self.get_perp_value();
 			self.apply_resistance(dt);
+
+			if rl.is_key_down(consts::KEY_A as i32) {
+				self.turn(dt, (self.vel_mag/100.0).min(1.0));
+			}
+			if rl.is_key_down(consts::KEY_D as i32) {
+				self.turn(dt, -(self.vel_mag/100.0).min(1.0));
+			}
+
 			if self.vel_mag < 0.1 {
 				self.vel = Vector2::zero();
 			}
 		}
 
-		self.angular_vel *= (120.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
 		self.angle += self.angular_vel * dt;
 		
 		self.pos = self.pos + self.vel.scale_by(dt);
@@ -88,6 +89,8 @@ impl Car {
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
+		self.angular_vel *= (120.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
+
 		let d_hor_v = -self.perp * dt * 500.0;
 		let ang = self.angle + HALF_PI;
 
