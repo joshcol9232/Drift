@@ -18,7 +18,7 @@ pub struct Car {
 	pub pos: Vector2,
 	vel: Vector2,
 	vel_mag: f32,
-	angle: f32,
+	pub angle: f32,
 	pub angular_vel: f32,
 	pub perp: f32   // How perpendicular the car is to it's velocity
 }

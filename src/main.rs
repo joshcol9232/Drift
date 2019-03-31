@@ -61,13 +61,7 @@ impl Game {
 
 	fn place_trails(&mut self, rl: &RaylibHandle) {
 		if self.player.perp.abs() > 0.4 && self.player.angular_vel.abs() > 0.5 {
-			self.trail_nodes.push( drift_trail::DriftTrailSet {
-				left_front: Vector2 { x: self.player.pos.x - car::HALF_CAR_W, y: self.player.pos.y - car::HALF_CAR_H },
-				right_front: self.player.pos,
-				left_back: self.player.pos,
-				right_back: self.player.pos,
-				time_created: rl.get_time()
-			});
+			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::HALF_CAR_W, car::HALF_CAR_H, -self.player.angle, rl.get_time()));
 		}
 	}
 
@@ -76,9 +70,9 @@ impl Game {
 		for (i, t) in self.trail_nodes.iter().enumerate() {
 			if i > 0 && last.left_front.distance_to(t.left_front) < 30.0 {
 				rl.draw_line_ex(last.left_front, t.left_front, 5.0, CHARCOAL);  // Left front
-				//rl.draw_line_ex(last.pos, t.pos, 5.0, CHARCOAL);  // Right front
-				//rl.draw_line_ex(last.pos, t.pos, 5.0, CHARCOAL);  // Left back
-				//rl.draw_line_ex(last.pos, t.pos, 5.0, CHARCOAL);  // Right back
+				rl.draw_line_ex(last.right_front, t.right_front, 5.0, CHARCOAL);  // Right front
+				rl.draw_line_ex(last.left_back, t.left_back, 5.0, CHARCOAL);  // Left back
+				rl.draw_line_ex(last.right_back, t.right_back, 5.0, CHARCOAL);  // Right back
 			}
 
 			last = t;

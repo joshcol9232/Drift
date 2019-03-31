@@ -23,9 +23,13 @@ impl Default for DriftTrailSet {
 }
 
 impl DriftTrailSet {
-	pub fn new(pos: Vector2, half_w: f32, half_h: f32, rotation: f32) -> DriftTrailSet {
-		let d = DriftTrailSet {
-			left_front: misc::rotate_vec(Vector2 { body. }, rotation),
+	pub fn new(pos: Vector2, half_w: f32, half_h: f32, rotation: f32, time: f64) -> DriftTrailSet {
+		DriftTrailSet {
+			left_front: misc::rotate_vec(Vector2 { x: -half_w, y: -half_h }, pos, rotation),
+			right_front: misc::rotate_vec(Vector2 { x: half_w, y: -half_h }, pos, rotation),
+			left_back: misc::rotate_vec(Vector2 { x: -half_w, y: half_h }, pos, rotation),
+			right_back: misc::rotate_vec(Vector2 { x: half_w, y: half_h }, pos, rotation),
+			time_created: time
 		}
 	}
 }
