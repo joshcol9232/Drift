@@ -8,11 +8,11 @@ mod misc;
 static BG_COLOR: Color = Color { r: 230, g: 230, b: 220, a: 255 };
 static RED_1: Color = Color { r: 190, g: 36, b: 25, a: 255 };
 static RED_2: Color = Color { r: 232, g: 89, b: 79, a: 255 };
-static CHARCOAL: Color = Color { r: 46, g: 46, b: 46, a: 255 };
+static CHARCOAL: Color = Color { r: 38, g: 38, b: 38, a: 255 };
 
 const POINT_DIST_THRESHOLD: f32 = 70.0;
-const DRIFT_TRAIL_WIDTH: f32 = 3.0;
-const TRAIL_DURATION: f64 = 3.0; // In seconds
+const DRIFT_TRAIL_WIDTH: f32 = 3.5;
+const TRAIL_DURATION: f64 = 3.5; // In seconds
 
 struct Game {
 	player: car::Car,
@@ -42,7 +42,7 @@ impl Game {
 	}
 
 	pub fn draw(&self, rl: &RaylibHandle) {
-		self.draw_trails(rl);
+		self.draw_trails(rl, rl.get_time());
 
 		for p in self.pillars.iter() {
 			//rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
@@ -65,19 +65,21 @@ impl Game {
 	}
 
 	fn place_trails(&mut self, time: f64) {
-		if self.player.perp.abs() > 0.4 {
+		if self.player.perp.abs() > 0.35 {
 			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
 		}
 	}
 
-	fn draw_trails(&self, rl: &RaylibHandle) {
+	fn draw_trails(&self, rl: &RaylibHandle, time: f64) {
 		let mut last: &drift_trail::DriftTrailSet = &drift_trail::DriftTrailSet::default();
 		for (i, t) in self.trail_nodes.iter().enumerate() {
 			if i > 0 && last.left_front.distance_to(t.left_front) < 10.0 {
-				rl.draw_line_ex(last.left_front, t.left_front, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Left front
-				rl.draw_line_ex(last.right_front, t.right_front, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Right front
-				rl.draw_line_ex(last.left_back, t.left_back, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Left back
-				rl.draw_line_ex(last.right_back, t.right_back, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Right back
+				let mut col = CHARCOAL;
+				col.a = ((3.0 * ((t.time_created - time)/TRAIL_DURATION) + 4.0).log2() * 128.0) as u8;
+				rl.draw_line_ex(last.left_front, t.left_front, DRIFT_TRAIL_WIDTH, col);  // Left front
+				rl.draw_line_ex(last.right_front, t.right_front, DRIFT_TRAIL_WIDTH, col);  // Right front
+				rl.draw_line_ex(last.left_back, t.left_back, DRIFT_TRAIL_WIDTH, col);  // Left back
+				rl.draw_line_ex(last.right_back, t.right_back, DRIFT_TRAIL_WIDTH, col);  // Right back
 			}
 
 			last = t;
@@ -103,7 +105,7 @@ fn main() {
 			.msaa_4x()
 			.build();
 
-	rl.set_target_fps(60);
+	rl.set_target_fps(144);
 
 	let mut g = Game::default();
 
