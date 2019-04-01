@@ -65,7 +65,7 @@ impl Game {
 	}
 
 	fn place_trails(&mut self, time: f64) {
-		if self.player.perp.abs() > 0.25 || self.player.angular_vel > 2.0 {
+		if self.player.perp.abs() > 0.4 {
 			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
 		}
 	}
