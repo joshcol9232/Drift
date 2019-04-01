@@ -3,7 +3,6 @@ use raylib::consts;
 
 use crate::misc;
 use crate::RED_1;
-use crate::drift_trail;
 
 const CAR_ACC: f32 = 500.0;
 
@@ -26,7 +25,8 @@ pub struct Car {
 	pub angle: f32,
 	pub angular_vel: f32,
 	pub angular_acc: f32,
-	pub perp: f32   // How perpendicular the car is to it's velocity
+	pub perp: f32,   // How perpendicular the car is to it's velocity
+	pub drifting: bool
 }
 
 impl Car {
@@ -38,7 +38,8 @@ impl Car {
 			angle: consts::PI as f32,
 			angular_vel: 0.0,
 			angular_acc: 0.0,
-			perp: 0.0
+			perp: 0.0,
+			drifting: false
 		}
 	}
 
@@ -67,6 +68,8 @@ impl Car {
 
 		if self.vel_mag > 0.0 {
 			self.perp = self.get_perp_value();
+			self.drifting = self.perp.abs() > 0.35;
+
 			self.apply_resistance(dt);
 
 			if rl.is_key_down(consts::KEY_A as i32) {
