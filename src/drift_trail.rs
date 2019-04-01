@@ -1,6 +1,7 @@
 use raylib::{Vector2, Rectangle};
 
 use crate::misc;
+use crate::car::{COM_OFF};
 
 pub struct DriftTrailSet {
 	pub left_front: Vector2,
@@ -25,10 +26,10 @@ impl Default for DriftTrailSet {
 impl DriftTrailSet {
 	pub fn new(pos: Vector2, half_w: f32, half_h: f32, rotation: f32, time: f64) -> DriftTrailSet {
 		DriftTrailSet {
-			left_front: misc::rotate_vec(Vector2 { x: -half_w, y: -half_h }, pos, rotation),
-			right_front: misc::rotate_vec(Vector2 { x: half_w, y: -half_h }, pos, rotation),
-			left_back: misc::rotate_vec(Vector2 { x: -half_w, y: half_h }, pos, rotation),
-			right_back: misc::rotate_vec(Vector2 { x: half_w, y: half_h }, pos, rotation),
+			left_front: misc::rotate_vec(Vector2 { x: -half_w, y: -half_h - COM_OFF }, rotation) + pos,
+			right_front: misc::rotate_vec(Vector2 { x: half_w, y: -half_h - COM_OFF }, rotation) + pos,
+			left_back: misc::rotate_vec(Vector2 { x: -half_w, y: half_h - COM_OFF }, rotation) + pos,
+			right_back: misc::rotate_vec(Vector2 { x: half_w, y: half_h - COM_OFF }, rotation) + pos,
 			time_created: time
 		}
 	}

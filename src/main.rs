@@ -11,6 +11,8 @@ static RED_2: Color = Color { r: 232, g: 89, b: 79, a: 255 };
 static CHARCOAL: Color = Color { r: 46, g: 46, b: 46, a: 255 };
 
 const POINT_DIST_THRESHOLD: f32 = 70.0;
+const DRIFT_TRAIL_WIDTH: f32 = 3.0;
+const TRAIL_DURATION: f64 = 3.0; // In seconds
 
 struct Game {
 	player: car::Car,
@@ -23,7 +25,7 @@ impl Default for Game {
 	fn default() -> Game {
 		Game {
 			player: car::Car::new(Vector2 { x: 300.0, y: 300.0 }),
-			pillars: vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 600.0, y: 400.0 }, 5.0)],
+			pillars: vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 700.0, y: 400.0 }, 7.0)],
 			trail_nodes: vec![],
 			score: 0
 		}
@@ -51,28 +53,31 @@ impl Game {
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
+		let curr_time = rl.get_time();
+
+		self.remove_dead_trail_nodes(curr_time);
 		self.player.update(rl, dt);
-		self.place_trails(rl);
+		self.place_trails(curr_time);
 	}
 
-	fn remove_dead_trail_nodes(&mut self) {
-
+	fn remove_dead_trail_nodes(&mut self, time: f64) {
+		self.trail_nodes.retain(|i|time - i.time_created <= TRAIL_DURATION);
 	}
 
-	fn place_trails(&mut self, rl: &RaylibHandle) {
-		if self.player.perp.abs() > 0.4 && self.player.angular_vel.abs() > 0.5 {
-			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::HALF_CAR_W, car::HALF_CAR_H, -self.player.angle, rl.get_time()));
+	fn place_trails(&mut self, time: f64) {
+		if self.player.perp.abs() > 0.25 || self.player.angular_vel > 2.0 {
+			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
 		}
 	}
 
 	fn draw_trails(&self, rl: &RaylibHandle) {
 		let mut last: &drift_trail::DriftTrailSet = &drift_trail::DriftTrailSet::default();
 		for (i, t) in self.trail_nodes.iter().enumerate() {
-			if i > 0 && last.left_front.distance_to(t.left_front) < 30.0 {
-				rl.draw_line_ex(last.left_front, t.left_front, 5.0, CHARCOAL);  // Left front
-				rl.draw_line_ex(last.right_front, t.right_front, 5.0, CHARCOAL);  // Right front
-				rl.draw_line_ex(last.left_back, t.left_back, 5.0, CHARCOAL);  // Left back
-				rl.draw_line_ex(last.right_back, t.right_back, 5.0, CHARCOAL);  // Right back
+			if i > 0 && last.left_front.distance_to(t.left_front) < 10.0 {
+				rl.draw_line_ex(last.left_front, t.left_front, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Left front
+				rl.draw_line_ex(last.right_front, t.right_front, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Right front
+				rl.draw_line_ex(last.left_back, t.left_back, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Left back
+				rl.draw_line_ex(last.right_back, t.right_back, DRIFT_TRAIL_WIDTH, CHARCOAL);  // Right back
 			}
 
 			last = t;
@@ -95,6 +100,7 @@ fn main() {
 	let rl = raylib::init()
 			.size(1000, 800)
 			.title("Drift")
+			.msaa_4x()
 			.build();
 
 	rl.set_target_fps(60);

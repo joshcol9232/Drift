@@ -2,7 +2,7 @@ use raylib::{Vector2, RaylibHandle, Color};
 
 use crate::{RED_1, BG_COLOR};
 
-const DEF_PILLAR_RADIUS: f32 = 5.0;
+const DEF_PILLAR_RADIUS: f32 = 7.0;
 
 pub struct Pillar {    // Pillars for the player to drift around
 	pub pos: Vector2,
@@ -12,7 +12,7 @@ pub struct Pillar {    // Pillars for the player to drift around
 impl Default for Pillar {
 	fn default() -> Pillar {
 		Pillar {
-			pos: Vector2 { x: 400.0, y: 400.0 },
+			pos: Vector2 { x: 300.0, y: 400.0 },
 			radius: DEF_PILLAR_RADIUS
 		}
 	}

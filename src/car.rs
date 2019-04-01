@@ -6,11 +6,16 @@ use crate::RED_1;
 use crate::drift_trail;
 
 const CAR_ACC: f32 = 500.0;
+
 pub const CAR_W: f32 = 24.0;
 pub const CAR_H: f32 = 40.0;
 pub const HALF_CAR_W: f32 = CAR_W/2.0;
 pub const HALF_CAR_H: f32 = CAR_H/2.0;
-const CAR_TURN_SPD: f32 = 10.0 * consts::PI as f32;
+pub const TRAIL_DRAW_W: f32 = HALF_CAR_W - 2.0;   // Where trails are drawn relative to center
+pub const TRAIL_DRAW_H: f32 = HALF_CAR_H - 6.0;
+pub const COM_OFF: f32 = 5.0; // Centre of mass
+
+const CAR_TURN_SPD: f32 = 7.0 * consts::PI as f32;
 const CAR_RESISTANCE: f32 = 2.718;
 const HALF_PI: f32 = (consts::PI/2.0) as f32;
 
@@ -20,6 +25,7 @@ pub struct Car {
 	vel_mag: f32,
 	pub angle: f32,
 	pub angular_vel: f32,
+	pub angular_acc: f32,
 	pub perp: f32   // How perpendicular the car is to it's velocity
 }
 
@@ -31,6 +37,7 @@ impl Car {
 			vel_mag: 0.0,
 			angle: consts::PI as f32,
 			angular_vel: 0.0,
+			angular_acc: 0.0,
 			perp: 0.0
 		}
 	}
@@ -42,7 +49,7 @@ impl Car {
 								width: CAR_W,
 								height: CAR_H
 							  },
-							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H + 5.0 },
+							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H + COM_OFF },
 							  -self.angle * consts::RAD2DEG as f32,
 							  RED_1);
 	}
@@ -56,15 +63,19 @@ impl Car {
 		}
 
 		self.vel_mag = self.vel.length();
+		self.angular_acc = 0.0;
+
 		if self.vel_mag > 0.0 {
 			self.perp = self.get_perp_value();
 			self.apply_resistance(dt);
 
 			if rl.is_key_down(consts::KEY_A as i32) {
-				self.turn(dt, (self.vel_mag/100.0).min(1.0));
+				self.angular_acc = (self.vel_mag/100.0).min(1.0);
+				self.turn(dt, self.angular_acc);
 			}
 			if rl.is_key_down(consts::KEY_D as i32) {
-				self.turn(dt, -(self.vel_mag/100.0).min(1.0));
+				self.angular_acc = -(self.vel_mag/100.0).min(1.0);
+				self.turn(dt, self.angular_acc);
 			}
 
 			if self.vel_mag < 0.1 {
@@ -89,7 +100,7 @@ impl Car {
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
-		self.angular_vel *= (120.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
+		self.angular_vel *= (250.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
 
 		let d_hor_v = -self.perp * dt * 500.0;
 		let ang = self.angle + HALF_PI;
