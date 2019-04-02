@@ -46,13 +46,16 @@ impl Game {
 		self.draw_trails(rl, rl.get_time());
 
 		for p in self.pillars.iter() {
-			//rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
+			rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
 			p.draw(rl);
 		}
 
 		self.player.draw(rl);
 
 		rl.draw_text(format!("Score: {}", self.score).as_str(), 400, 10, 20, RED_2);
+		rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
+		rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
+		rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {

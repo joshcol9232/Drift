@@ -21,10 +21,10 @@ const HALF_PI: f32 = (consts::PI/2.0) as f32;
 pub struct Car {
 	pub pos: Vector2,
 	vel: Vector2,
-	vel_mag: f32,
+	pub vel_mag: f32,
 	pub angle: f32,
 	pub angular_vel: f32,
-	pub angular_acc: f32,
+	angular_acc: f32,
 	pub perp: f32,   // How perpendicular the car is to it's velocity
 	pub drifting: bool
 }
@@ -68,7 +68,8 @@ impl Car {
 
 		if self.vel_mag > 0.0 {
 			self.perp = self.get_perp_value();
-			self.drifting = self.perp.abs() > 0.35;
+
+			self.drifting = self.perp.abs() > 0.35 && self.vel_mag > 10.0;
 
 			self.apply_resistance(dt);
 
@@ -81,7 +82,7 @@ impl Car {
 				self.turn(dt, self.angular_acc);
 			}
 
-			if self.vel_mag < 0.1 {
+			if self.vel_mag < 0.2 {
 				self.vel = Vector2::zero();
 			}
 		}
@@ -97,9 +98,9 @@ impl Car {
 	}
 
 	fn turn(&mut self, dt: f32, amount: f32) {
-		if self.angular_vel.abs() < 3.7 {
-			self.angular_vel += dt * amount * CAR_TURN_SPD;
-		}
+		//if self.angular_vel.abs() < 3.7 {
+		self.angular_vel += dt * amount * CAR_TURN_SPD;
+		//}
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {

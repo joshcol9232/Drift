@@ -1,7 +1,7 @@
 use raylib::{Vector2, Rectangle};
 
 use crate::misc;
-use crate::car::{COM_OFF};
+use crate::car::COM_OFF;
 
 pub struct DriftTrailSet {
 	pub left_front: Vector2,
