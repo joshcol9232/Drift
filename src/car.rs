@@ -1,4 +1,4 @@
-use raylib::{Vector2, RaylibHandle, Rectangle};
+use raylib::{Vector2, RaylibHandle, Rectangle, Color};
 use raylib::consts;
 
 use crate::misc;
@@ -53,6 +53,9 @@ impl Car {
 							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H + COM_OFF },
 							  -self.angle * consts::RAD2DEG as f32,
 							  RED_1);
+
+
+		//self.draw_debug(rl);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
@@ -90,6 +93,10 @@ impl Car {
 		self.angle += self.angular_vel * dt;
 		
 		self.pos = self.pos + self.vel.scale_by(dt);
+	}
+
+	fn draw_debug(&self, rl: &RaylibHandle) {
+		rl.draw_line_ex(self.pos, self.pos + self.vel, 2.0, Color::RED);
 	}
 
 	fn accelerate(&mut self, dt: f32, power: f32) {

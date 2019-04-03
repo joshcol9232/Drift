@@ -13,7 +13,7 @@ static CHARCOAL: Color = Color { r: 38, g: 38, b: 38, a: 255 };
 const POINT_DIST_THRESHOLD: f32 = 100.0;
 const DRIFT_TRAIL_WIDTH: f32 = 3.5;
 const TRAIL_DURATION: f64 = 3.5; // In seconds
-const MAX_POINTS_PER_FRAME: u32 = 500;
+const MAX_POINTS_PER_FRAME: u32 = 5;
 
 struct Game {
 	player: car::Car,
@@ -78,7 +78,7 @@ impl Game {
 	}
 
 	fn get_points_from_dist(&mut self, dt: f32, dist: f32) -> u32 {
-		(dt * (dist/POINT_DIST_THRESHOLD) * MAX_POINTS_PER_FRAME as f32) as u32
+		(dt * (POINT_DIST_THRESHOLD - dist) * MAX_POINTS_PER_FRAME as f32) as u32
 	}
 
 	fn get_closest_pillar_to_player(&self) -> (i32, f32) {
@@ -124,7 +124,7 @@ fn main() {
 			.msaa_4x()
 			.build();
 
-	rl.set_target_fps(60);
+	rl.set_target_fps(144);
 
 	let mut g = Game::default();
 
