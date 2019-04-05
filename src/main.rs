@@ -26,7 +26,7 @@ impl Default for Game {
 	fn default() -> Game {
 		Game {
 			player: car::Car::new(Vector2 { x: 300.0, y: 300.0 }),
-			pillars: vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 700.0, y: 400.0 }, 7.0)],
+			pillars: vec![], //vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 700.0, y: 400.0 }, 7.0)],
 			trail_nodes: vec![],
 			score: 0
 		}
@@ -46,7 +46,7 @@ impl Game {
 		self.draw_trails(rl, rl.get_time());
 
 		for p in self.pillars.iter() {
-			rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
+			//rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
 			p.draw(rl);
 		}
 
@@ -70,6 +70,10 @@ impl Game {
 		}
 	}
 
+	pub fn add_pillar(&mut self, p: Vector2, r: f32) {
+		self.pillars.push( pillar::Pillar::new(p, r) );
+	}
+
 	fn update_points(&mut self, dt: f32) {
 		let closest = self.get_closest_pillar_to_player();
 		if closest.1 <= POINT_DIST_THRESHOLD {
@@ -78,7 +82,7 @@ impl Game {
 	}
 
 	fn get_points_from_dist(&mut self, dt: f32, dist: f32) -> u32 {
-		(dt * (POINT_DIST_THRESHOLD - dist) * MAX_POINTS_PER_FRAME as f32) as u32
+		(dt * (POINT_DIST_THRESHOLD - dist) * MAX_POINTS_PER_FRAME as f32).ceil() as u32
 	}
 
 	fn get_closest_pillar_to_player(&self) -> (i32, f32) {
@@ -124,9 +128,12 @@ fn main() {
 			.msaa_4x()
 			.build();
 
-	rl.set_target_fps(144);
+	rl.set_target_fps(60);
 
 	let mut g = Game::default();
+	g.add_pillar(Vector2 { x: 300.0 , y: 400.0 }, 7.0);
+	g.add_pillar(Vector2 { x: 700.0 , y: 400.0 }, 7.0);
+	g.add_pillar(Vector2 { x: 500.0 , y: 300.0 }, 7.0);
 
 	while !rl.window_should_close() {
 		g.update(&rl, rl.get_frame_time());
