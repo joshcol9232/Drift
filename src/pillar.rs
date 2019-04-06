@@ -35,4 +35,6 @@ impl Pillar {
 	pub fn distance_to(&self, point: Vector2) -> f32 {
 		point.distance_to(self.pos)
 	}
+
+
 }

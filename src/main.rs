@@ -128,7 +128,7 @@ fn main() {
 			.msaa_4x()
 			.build();
 
-	rl.set_target_fps(60);
+	rl.set_target_fps(144);
 
 	let mut g = Game::default();
 	g.add_pillar(Vector2 { x: 300.0 , y: 400.0 }, 7.0);

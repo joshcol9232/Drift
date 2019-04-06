@@ -95,10 +95,6 @@ impl Car {
 		self.pos = self.pos + self.vel.scale_by(dt);
 	}
 
-	fn draw_debug(&self, rl: &RaylibHandle) {
-		rl.draw_line_ex(self.pos, self.pos + self.vel, 2.0, Color::RED);
-	}
-
 	fn accelerate(&mut self, dt: f32, power: f32) {
 		let dv = dt * power * CAR_ACC;
 		self.vel += misc::get_components(dv, self.angle);
