@@ -1,9 +1,8 @@
 [package]
 name = "Drift"
 version = "0.1.0"
-authors = ["12ColcloughJ <joshuacolclough2@googlemail.com>"]
+authors = ["Josh <joshuacolclough2@googlemail.com>"]
 edition = "2018"
 
 [dependencies]
 raylib = "0.9"
-ncollide2d = "0.17"

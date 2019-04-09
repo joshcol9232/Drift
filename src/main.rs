@@ -1,4 +1,4 @@
-use raylib::{Color, Vector2, RaylibHandle, Texture2D};
+use raylib::{Color, Vector2, RaylibHandle, Texture2D, Rectangle};
 
 mod car;
 mod drift_trail;
@@ -129,6 +129,8 @@ fn main() {
 
     rl.set_target_fps(144 * 2);
 
+    let target = rl.load_render_texture(1000, 800);
+
 	let mut g = Game::new(car::Car::new(Vector2 { x: 300.0, y: 300.0 }), rl.load_texture("textures/car/car_body.png"));
 	g.add_pillar(Vector2 { x: 300.0 , y: 400.0 }, 7.0);
 	g.add_pillar(Vector2 { x: 700.0 , y: 400.0 }, 7.0);
@@ -139,7 +141,12 @@ fn main() {
 
 		rl.begin_drawing();
 		rl.clear_background(BG_COLOR);
+
+        rl.begin_texture_mode(&target);
 		g.draw(&rl);
+        rl.end_texture_mode();
+
+        rl.draw_texture_rec(&target.texture, Rectangle { x: 0.0, y: 0.0, width: target.texture.width, height: -target.texture.height }, Vector2::zero(), Color::WHITE);  // Draw screen texture
 
 		rl.draw_fps(10, 10);
 		rl.end_drawing();
