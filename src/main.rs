@@ -1,4 +1,4 @@
-use raylib::{Color, Vector2, RaylibHandle, Texture2D, Rectangle};
+use raylib::{Color, Vector2, RaylibHandle, Texture2D};
 
 mod car;
 mod drift_trail;
@@ -20,8 +20,8 @@ struct Game {
 	player: car::Car,
 	pillars: Vec<pillar::Pillar>,
 	trail_nodes: Vec<drift_trail::DriftTrailSet>,
-    car_texture: Texture2D,
-    trail_timer: f32,
+   car_texture: Texture2D,
+   trail_timer: f32,
 	score: u32
 }
 
@@ -30,10 +30,10 @@ impl Game {
 		Game {
 			player: p,
 			pillars: vec![],
-            trail_nodes: vec![],
-            car_texture: c_texture,
-            trail_timer: 0.0,
-            score: 0
+			trail_nodes: vec![],
+			car_texture: c_texture,
+			trail_timer: 0.0,
+			score: 0
 		}
 	}
 
@@ -54,7 +54,7 @@ impl Game {
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
-        self.trail_timer += dt;
+		self.trail_timer += dt;
 		let curr_time = rl.get_time();
 
 		self.remove_dead_trail_nodes(curr_time);
@@ -77,7 +77,7 @@ impl Game {
 		}
 	}
 
-	fn get_points_from_dist(&mut self, dt: f32, dist: f32) -> u32 {
+	fn get_points_from_dist(&mut self, dt: f32, dist: f32) -> u32 {    // Gets the points scored from the distance to the peg
 		(dt * (POINT_DIST_THRESHOLD - dist) * MAX_POINTS_PER_FRAME as f32).ceil() as u32
 	}
 
@@ -127,9 +127,7 @@ fn main() {
 			.msaa_4x()
 			.build();
 
-    rl.set_target_fps(144 * 2);
-
-    let target = rl.load_render_texture(1000, 800);
+	rl.set_target_fps(144 * 2);
 
 	let mut g = Game::new(car::Car::new(Vector2 { x: 300.0, y: 300.0 }), rl.load_texture("textures/car/car_body.png"));
 	g.add_pillar(Vector2 { x: 300.0 , y: 400.0 }, 7.0);
@@ -141,12 +139,7 @@ fn main() {
 
 		rl.begin_drawing();
 		rl.clear_background(BG_COLOR);
-
-        rl.begin_texture_mode(&target);
 		g.draw(&rl);
-        rl.end_texture_mode();
-
-        rl.draw_texture_rec(&target.texture, Rectangle { x: 0.0, y: 0.0, width: target.texture.width, height: -target.texture.height }, Vector2::zero(), Color::WHITE);  // Draw screen texture
 
 		rl.draw_fps(10, 10);
 		rl.end_drawing();
