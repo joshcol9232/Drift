@@ -5,7 +5,7 @@ use crate::misc;
 const CAR_ACC: f32 = 500.0;
 
 pub const CAR_W: f32 = 36.0;
-pub const CAR_H: f32 = 62.0;
+pub const CAR_H: f32 = 56.0;
 pub const HALF_CAR_W: f32 = CAR_W/2.0;
 pub const HALF_CAR_H: f32 = CAR_H/2.0;
 pub const TRAIL_DRAW_W: f32 = HALF_CAR_W - 2.0;   // Where trails are drawn relative to center
