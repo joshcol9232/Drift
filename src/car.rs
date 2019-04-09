@@ -1,18 +1,16 @@
-use raylib::{Vector2, RaylibHandle, Rectangle, Color};
-use raylib::consts;
+use raylib::{consts, Vector2, RaylibHandle, Rectangle, Color, Texture2D};
 
 use crate::misc;
-use crate::RED_1;
 
 const CAR_ACC: f32 = 500.0;
 
-pub const CAR_W: f32 = 24.0;
-pub const CAR_H: f32 = 40.0;
+pub const CAR_W: f32 = 36.0;
+pub const CAR_H: f32 = 62.0;
 pub const HALF_CAR_W: f32 = CAR_W/2.0;
 pub const HALF_CAR_H: f32 = CAR_H/2.0;
 pub const TRAIL_DRAW_W: f32 = HALF_CAR_W - 2.0;   // Where trails are drawn relative to center
 pub const TRAIL_DRAW_H: f32 = HALF_CAR_H - 6.0;
-pub const COM_OFF: f32 = 5.0; // Centre of mass
+pub const COM_OFF: f32 = 8.0; // Centre of mass
 
 const CAR_TURN_SPD: f32 = 7.0 * consts::PI as f32;
 const CAR_RESISTANCE: f32 = 2.718;
@@ -43,7 +41,8 @@ impl Car {
 		}
 	}
 
-	pub fn draw(&self, rl: &RaylibHandle) {
+	pub fn draw(&self, texture: &Texture2D, rl: &RaylibHandle) {
+        /*
 		rl.draw_rectangle_pro(Rectangle {
 								x: self.pos.x,
 								y: self.pos.y,
@@ -53,9 +52,28 @@ impl Car {
 							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H + COM_OFF },
 							  -self.angle * consts::RAD2DEG as f32,
 							  RED_1);
+        */
 
-
-		//self.draw_debug(rl);
+        rl.draw_texture_pro(texture,
+                            Rectangle {
+                                x: 0.0,
+                                y: 0.0,
+                                width: CAR_W,
+                                height: CAR_H
+                            },
+                            Rectangle {
+                                x: self.pos.x,
+                                y: self.pos.y,
+                                width: CAR_W,
+                                height: CAR_H
+                            },
+                            Vector2 {
+                                x: HALF_CAR_W,
+                                y: HALF_CAR_H + COM_OFF
+                            },
+                            -self.angle * consts::RAD2DEG as f32,
+                            Color::WHITE
+                            );
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
@@ -65,6 +83,12 @@ impl Car {
 		if rl.is_key_down(consts::KEY_S as i32) {
 			self.accelerate(dt, -1.0);
 		}
+
+        if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
+            self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
+            self.turn(dt, -rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32));
+        }
+
 
 		self.vel_mag = self.vel.length();
 		self.angular_acc = 0.0;
@@ -107,10 +131,10 @@ impl Car {
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
-		self.angular_vel *= (250.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
+		self.angular_vel *= (100.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
 
 		let d_hor_v = -self.perp * dt * 500.0;
-		let ang = self.angle + HALF_PI;
+		let ang = self.angle + HALF_PI; // Angle perpendicular to car to apply resistive vel on
 
 		self.vel += Vector2 { x: d_hor_v * ang.sin(), y: d_hor_v * ang.cos() };
 		self.vel.scale(CAR_RESISTANCE.powf(-dt));   // All deceleration

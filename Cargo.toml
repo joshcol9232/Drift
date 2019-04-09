@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 raylib = "0.9"
+ncollide2d = "0.17"

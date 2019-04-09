@@ -1,5 +1,5 @@
-use raylib::{Color, Vector2, RaylibHandle, Rectangle};
- 
+use raylib::{Color, Vector2, RaylibHandle, Texture2D};
+
 mod car;
 mod drift_trail;
 mod pillar;
@@ -14,31 +14,26 @@ const POINT_DIST_THRESHOLD: f32 = 100.0;
 const DRIFT_TRAIL_WIDTH: f32 = 3.5;
 const TRAIL_DURATION: f64 = 3.5; // In seconds
 const MAX_POINTS_PER_FRAME: u32 = 5;
+const TRAIL_PLACEMENT_INTERVAL: f32 = 0.007;  // Place a trail every x seconds.
 
 struct Game {
 	player: car::Car,
 	pillars: Vec<pillar::Pillar>,
 	trail_nodes: Vec<drift_trail::DriftTrailSet>,
+    car_texture: Texture2D,
+    trail_timer: f32,
 	score: u32
 }
 
-impl Default for Game {
-	fn default() -> Game {
-		Game {
-			player: car::Car::new(Vector2 { x: 300.0, y: 300.0 }),
-			pillars: vec![], //vec![pillar::Pillar::default(), pillar::Pillar::new(Vector2 { x: 700.0, y: 400.0 }, 7.0)],
-			trail_nodes: vec![],
-			score: 0
-		}
-	}
-}
-
 impl Game {
-	pub fn new(p: car::Car) -> Game {
+	pub fn new(p: car::Car, c_texture: Texture2D) -> Game {
 		Game {
 			player: p,
 			pillars: vec![],
-			..Default::default()
+            trail_nodes: vec![],
+            car_texture: c_texture,
+            trail_timer: 0.0,
+            score: 0
 		}
 	}
 
@@ -50,7 +45,7 @@ impl Game {
 			p.draw(rl);
 		}
 
-		self.player.draw(rl);
+		self.player.draw(&self.car_texture, rl);
 
 		rl.draw_text(format!("Score: {}", self.score).as_str(), 400, 10, 20, RED_2);
 		rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
@@ -59,6 +54,7 @@ impl Game {
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
+        self.trail_timer += dt;
 		let curr_time = rl.get_time();
 
 		self.remove_dead_trail_nodes(curr_time);
@@ -101,7 +97,10 @@ impl Game {
 	}
 
 	fn place_trails(&mut self, time: f64) {
-		self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
+        if self.trail_timer >= TRAIL_PLACEMENT_INTERVAL {
+            self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
+            self.trail_timer = 0.0;
+        }
 	}
 
 	fn draw_trails(&self, rl: &RaylibHandle, time: f64) {
@@ -109,7 +108,7 @@ impl Game {
 		for (i, t) in self.trail_nodes.iter().enumerate() {
 			if i > 0 && last.left_front.distance_to(t.left_front) < 10.0 {
 				let mut col = CHARCOAL;
-				col.a = ((3.0 * ((t.time_created - time)/TRAIL_DURATION) + 4.0).log2() * 255.0).min(255.0) as u8;
+				col.a = ((3.0 * ((t.time_created - time)/TRAIL_DURATION) + 4.0).log2() * 255.0).min(255.0) as u8;  // Alpha value for this line
 				rl.draw_line_ex(last.left_front, t.left_front, DRIFT_TRAIL_WIDTH, col);  // Left front
 				rl.draw_line_ex(last.right_front, t.right_front, DRIFT_TRAIL_WIDTH, col);  // Right front
 				rl.draw_line_ex(last.left_back, t.left_back, DRIFT_TRAIL_WIDTH, col);  // Left back
@@ -128,9 +127,9 @@ fn main() {
 			.msaa_4x()
 			.build();
 
-	rl.set_target_fps(144);
+    rl.set_target_fps(144 * 2);
 
-	let mut g = Game::default();
+	let mut g = Game::new(car::Car::new(Vector2 { x: 300.0, y: 300.0 }), rl.load_texture("textures/car/car_body.png"));
 	g.add_pillar(Vector2 { x: 300.0 , y: 400.0 }, 7.0);
 	g.add_pillar(Vector2 { x: 700.0 , y: 400.0 }, 7.0);
 	g.add_pillar(Vector2 { x: 500.0 , y: 300.0 }, 7.0);

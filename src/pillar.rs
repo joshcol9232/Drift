@@ -1,4 +1,4 @@
-use raylib::{Vector2, RaylibHandle, Color};
+use raylib::{Vector2, RaylibHandle};
 
 use crate::{RED_1, BG_COLOR};
 
