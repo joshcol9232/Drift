@@ -42,18 +42,6 @@ impl Car {
 	}
 
 	pub fn draw(&self, texture: &Texture2D, rl: &RaylibHandle) {
-        /*
-		rl.draw_rectangle_pro(Rectangle {
-								x: self.pos.x,
-								y: self.pos.y,
-								width: CAR_W,
-								height: CAR_H
-							  },
-							  Vector2 { x: HALF_CAR_W, y: HALF_CAR_H + COM_OFF },
-							  -self.angle * consts::RAD2DEG as f32,
-							  RED_1);
-        */
-
         rl.draw_texture_pro(texture,
                             Rectangle {
                                 x: 0.0,
@@ -84,11 +72,10 @@ impl Car {
 			self.accelerate(dt, -1.0);
 		}
 
-        if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
-            self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
-            self.turn(dt, -rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32));
-        }
-
+		if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
+			self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
+			self.turn(dt, -rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32));
+		}
 
 		self.vel_mag = self.vel.length();
 		self.angular_acc = 0.0;
@@ -125,9 +112,7 @@ impl Car {
 	}
 
 	fn turn(&mut self, dt: f32, amount: f32) {
-		//if self.angular_vel.abs() < 3.7 {
 		self.angular_vel += dt * amount * CAR_TURN_SPD;
-		//}
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
