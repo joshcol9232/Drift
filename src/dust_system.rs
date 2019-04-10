@@ -3,24 +3,26 @@ use rand::Rng;
 
 use crate::{CHARCOAL, DRIFT_TRAIL_WIDTH, misc};
 
-const DUST_PARTICLE_MAX_LIFESPAN: f64 = 0.5;  // In seconds
-const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.4;  // In seconds
+const DUST_PARTICLE_MAX_LIFESPAN: f64 = 2.0;  // In seconds
+const DUST_PARTICLE_MIN_LIFESPAN: f64 = 1.0;  // In seconds
 
-const DUST_PARTICLES_EMM_RATE: f32 = 1000.0; // How many emitted per sec
+pub const DUST_PARTICLES_EMM_RATE: f32 = 4.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
 const DUST_PARTICLES_EMM_RADIUS: f32 = DRIFT_TRAIL_WIDTH;
 
 const DUST_PARTICLE_MIN_SPEED: f32 = 10.0;
-const DUST_PARTICLE_MAX_SPEED: f32 = 100.0;
-const DUST_PARTICLE_DECLERATION: f32 = 1.0;
+const DUST_PARTICLE_MAX_SPEED: f32 = 30.0;
 
 const DUST_PARTICLE_ANGULAR_VARIATION: f32 = PI as f32 * 2.0;
 
-const DUST_PARTICLE_RADIUS: f32 = 5.0;
+const DUST_PARTICLE_RADIUS: f32 = 8.0;
+
+const DUST_EMMISION_TIME: f32 = 0.01;
 
 
 struct Particle {
 	pos: Vector2,
 	vel: Vector2,
+	radius: f32,
 	time_created: f64,
 	lifespan: f64,
 	alpha: u8
@@ -31,6 +33,7 @@ impl Default for Particle {
 		Particle {
 			pos: Vector2::zero(),
 			vel: Vector2::zero(),
+			radius: DUST_PARTICLE_RADIUS,
 			time_created: 0.0,
 			lifespan: 1.0,
 			alpha: 255
@@ -50,38 +53,49 @@ impl Particle {
 	}
 
 	fn update(&mut self, dt: f32, time: f64) {
-		self.alpha = ((1.0 - ((time - self.time_created)/self.lifespan)) * 255.0).min(255.0).ceil() as u8;
-
-		//self.vel.scale(dt * DUST_PARTICLE_DECLERATION);
+		let norm_life: f32 = (1.0 - (time - self.time_created)/self.lifespan) as f32;
+		self.alpha = (norm_life.powi(3) * 230.0).min(230.0).ceil() as u8;
+		self.radius = DUST_PARTICLE_RADIUS + (2.0 * DUST_PARTICLE_RADIUS * (1.0 - norm_life));
 		self.pos += self.vel.scale_by(dt);
 	}
 
-	#[inline]
 	fn draw(&self, rl: &RaylibHandle) {
 		let mut col = CHARCOAL;
 		col.a = self.alpha;
-		rl.draw_circle_v(self.pos, DUST_PARTICLE_RADIUS, col);
+		rl.draw_circle_v(self.pos, self.radius, col);
 	}
 }
 
 pub struct ParticleSystem {
 	particles: Vec<Particle>,
 	particle_emm_rate: f32,  // In p per second
+	emit: bool,
+	pub finished: bool,
+	time_emitting: f32,
 	spawn_pos: Vector2
 }
 
 impl ParticleSystem {
-	pub fn new(p: Vector2) -> ParticleSystem {
+	pub fn new(p: Vector2, rate: f32) -> ParticleSystem {
 		ParticleSystem {
 			particles: vec![],
-			particle_emm_rate: DUST_PARTICLES_EMM_RATE,
+			particle_emm_rate: rate,
+			emit: true,
+			finished: false,
+			time_emitting: 0.0,
 			spawn_pos: p
 		}
 	}
 
 	pub fn update(&mut self, dt: f32, time: f64) {
 		self.kill_particles(time);
-		self.spawn_particles(dt, time);
+		if self.emit {
+			self.spawn_particles(dt, time);
+			self.time_emitting += dt;
+			self.emit = self.time_emitting <= DUST_EMMISION_TIME;
+		} else {
+			self.finished = self.particles.len() == 0;
+		}
 
 		for p in self.particles.iter_mut() {
 			p.update(dt, time);

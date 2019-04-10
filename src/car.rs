@@ -20,6 +20,7 @@ pub struct Car {
 	pub pos: Vector2,
 	vel: Vector2,
 	pub vel_mag: f32,
+	pub throttle: f32,
 	pub angle: f32,
 	pub angular_vel: f32,
 	angular_acc: f32,
@@ -33,6 +34,7 @@ impl Car {
 			pos: p,
 			vel: Vector2::zero(),
 			vel_mag: 0.0,
+			throttle: 0.0,
 			angle: consts::PI as f32,
 			angular_vel: 0.0,
 			angular_acc: 0.0,
@@ -44,6 +46,7 @@ impl Car {
 	pub fn reset(&mut self) {
 		self.pos = Vector2 { x: 100.0, y: 600.0 };
 		self.vel = Vector2::zero();
+		self.throttle = 0.0;
 		self.angle = consts::PI as f32;
 		self.angular_vel = 0.0;
 		self.angular_acc = 0.0;
@@ -73,12 +76,21 @@ impl Car {
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
-		if rl.is_key_down(consts::KEY_W as i32) {
-			self.accelerate(dt, 1.0);
+		let up_key = rl.is_key_down(consts::KEY_W as i32);
+		let down_key = rl.is_key_down(consts::KEY_S as i32);
+		if up_key || down_key {
+			if up_key {
+				self.throttle = 1.0;
+			}
+			if down_key {
+				self.throttle = -1.0;
+			}
+
+			self.accelerate(dt, self.throttle);
+		} else {
+			self.throttle = 0.0;
 		}
-		if rl.is_key_down(consts::KEY_S as i32) {
-			self.accelerate(dt, -1.0);
-		}
+
 
 		self.vel_mag = self.vel.length();
 		self.angular_acc = 0.0;
@@ -104,17 +116,19 @@ impl Car {
 			}
 		}
 
-		if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
-			self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
-			self.accelerate(dt, -((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, 2)) + 1.0)/2.0);  // Brake
-
-
-			let turn_amount = rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32);
-			if turn_amount.abs() > 0.1 {
-				self.angular_acc = (self.vel_mag/200.0).min(1.0) * -turn_amount;
-				self.turn(dt, self.angular_acc);
-			}
-		}
+/*
+ *      if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
+ *         self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
+ *         self.accelerate(dt, -((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, 2)) + 1.0)/2.0);  // Brake
+ *
+ *
+ *         let turn_amount = rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32);
+ *         if turn_amount.abs() > 0.1 {
+ *            self.angular_acc = (self.vel_mag/200.0).min(1.0) * -turn_amount;
+ *            self.turn(dt, self.angular_acc);
+ *         }
+ *      }
+ */
 
 		self.angle += self.angular_vel * dt;
 		

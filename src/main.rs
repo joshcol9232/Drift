@@ -18,14 +18,16 @@ const DRIFT_TRAIL_WIDTH: f32 = 3.5;
 const TRAIL_DURATION: f64 = 3.5; // In seconds
 const MAX_POINTS_PER_FRAME: u32 = 5;
 const TRAIL_PLACEMENT_INTERVAL: f32 = 0.007;  // Place a trail every x seconds.
+const DUST_SOURCE_PLACEMENT_INTERVAL: u8 = 5;  // Place a dust source every x trails are put down
 
 struct Game {
 	player: car::Car,
 	pillars: Vec<pillar::Pillar>,
 	trail_nodes: Vec<drift_trail::DriftTrailSet>,
-	pub particle_systems: Vec<dust_system::ParticleSystem>,
+	particle_systems: Vec<dust_system::ParticleSystem>,
    car_texture: Texture2D,
    trail_timer: f32,
+	dust_trail_count: u8,
 	score: u32
 }
 
@@ -38,6 +40,7 @@ impl Game {
 			particle_systems: vec![],
 			car_texture: c_texture,
 			trail_timer: 0.0,
+			dust_trail_count: 0,
 			score: 0
 		}
 	}
@@ -46,7 +49,6 @@ impl Game {
 		self.draw_trails(rl, rl.get_time());
 
 		for p in self.pillars.iter() {
-			//rl.draw_circle_v(p.pos, POINT_DIST_THRESHOLD, Color { r: 30, g: 160, b: 10, a: 100 });
 			p.draw(rl);
 		}
 
@@ -56,19 +58,20 @@ impl Game {
 
 		self.player.draw(&self.car_texture, rl);
 
-
 		rl.draw_text(format!("Score: {}", self.score).as_str(), 400, 10, 20, RED_2);
 		rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
 		rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
 		rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
-		rl.draw_text(format!("Particle count: {}", self.get_particle_count()).as_str(), 10, 98, 20, CHARCOAL);
+		rl.draw_text(format!("Prt system count: {}", self.particle_systems.len()).as_str(), 10, 98, 20, CHARCOAL);
+		rl.draw_text(format!("Particle count: {}", self.get_particle_count()).as_str(), 10, 120, 20, CHARCOAL);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
 		self.trail_timer += dt;
 		let curr_time = rl.get_time();
 
-		self.remove_dead_trail_nodes(curr_time);
+		self.kill_dead_trail_nodes(curr_time);
+		self.kill_finished_particle_systems();
 		self.player.update(rl, dt);
 
 		for ps in self.particle_systems.iter_mut() {
@@ -77,6 +80,7 @@ impl Game {
 
 		if self.player.drifting {
 			self.place_trails(curr_time);
+			self.place_dust_sources();
 			self.update_points(dt);
 		}
 
@@ -94,7 +98,7 @@ impl Game {
 	}
 
 	pub fn add_dust_source(&mut self, pos: Vector2) {
-		self.particle_systems.push(dust_system::ParticleSystem::new(pos));
+		self.particle_systems.push( dust_system::ParticleSystem::new(pos, dust_system::DUST_PARTICLES_EMM_RATE * self.player.perp.abs() * self.player.throttle.abs() * self.player.vel_mag.abs()) );
 	}
 
 	fn get_particle_count(&self) -> usize {
@@ -128,15 +132,28 @@ impl Game {
 		closest
 	}
 
-	fn remove_dead_trail_nodes(&mut self, time: f64) {
+	fn kill_dead_trail_nodes(&mut self, time: f64) {
 		self.trail_nodes.retain(|i|time - i.time_created <= TRAIL_DURATION);
 	}
 
+	fn kill_finished_particle_systems(&mut self) {
+		self.particle_systems.retain(|i|!i.finished);
+	}
+
 	fn place_trails(&mut self, time: f64) {
-        if self.trail_timer >= TRAIL_PLACEMENT_INTERVAL {
-            self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
-            self.trail_timer = 0.0;
-        }
+		if self.trail_timer >= TRAIL_PLACEMENT_INTERVAL {
+			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.player.pos, car::TRAIL_DRAW_W, car::TRAIL_DRAW_H, -self.player.angle, time));
+			self.trail_timer = 0.0;
+			self.dust_trail_count += 1;
+		}
+	}
+
+	fn place_dust_sources(&mut self) {
+		if self.dust_trail_count >= DUST_SOURCE_PLACEMENT_INTERVAL {
+			self.add_dust_source(self.player.pos + misc::rotate_vec(Vector2 { x: -drift_trail::BACK_WHEEL_X_OFF + car::HALF_CAR_W - 5.0, y: drift_trail::BACK_WHEEL_Y_OFF - car::HALF_CAR_H }, -self.player.angle));  // Left wheel
+			self.add_dust_source(self.player.pos + misc::rotate_vec(Vector2 { x: drift_trail::BACK_WHEEL_X_OFF - car::HALF_CAR_W + 5.0, y: drift_trail::BACK_WHEEL_Y_OFF - car::HALF_CAR_H }, -self.player.angle));  // Right wheel
+			self.dust_trail_count = 0;
+		}
 	}
 
 	fn draw_trails(&self, rl: &RaylibHandle, time: f64) {
@@ -169,8 +186,6 @@ fn main() {
 	g.add_pillar(Vector2 { x: 300.0 , y: 400.0 }, 7.0);
 	g.add_pillar(Vector2 { x: 700.0 , y: 400.0 }, 7.0);
 	g.add_pillar(Vector2 { x: 500.0 , y: 300.0 }, 7.0);
-
-	g.add_dust_source(Vector2 { x: 400.0, y: 500.0 });
 
 	while !rl.window_should_close() {
 		g.update(&rl, rl.get_frame_time());

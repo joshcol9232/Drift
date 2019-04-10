@@ -3,10 +3,10 @@ use raylib::Vector2;
 use crate::misc;
 use crate::car::COM_OFF;
 
-const BACK_WHEEL_X_OFF: f32 = 2.0;
-const BACK_WHEEL_Y_OFF: f32 = 7.0;
-const FRONT_WHEEL_X_OFF: f32 = 2.0;
-const FRONT_WHEEL_Y_OFF: f32 = 5.0;
+pub const BACK_WHEEL_X_OFF: f32 = 2.0;
+pub const BACK_WHEEL_Y_OFF: f32 = 7.0;
+pub const FRONT_WHEEL_X_OFF: f32 = 2.0;
+pub const FRONT_WHEEL_Y_OFF: f32 = 5.0;
 
 pub struct DriftTrailSet {
 	pub left_front: Vector2,
