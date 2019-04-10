@@ -1,7 +1,10 @@
+extern crate rand;
+
 use raylib::{Color, Vector2, RaylibHandle, Texture2D, consts};
 
 mod car;
 mod drift_trail;
+mod dust_system;
 mod pillar;
 mod misc;
 
@@ -20,6 +23,7 @@ struct Game {
 	player: car::Car,
 	pillars: Vec<pillar::Pillar>,
 	trail_nodes: Vec<drift_trail::DriftTrailSet>,
+	pub particle_systems: Vec<dust_system::ParticleSystem>,
    car_texture: Texture2D,
    trail_timer: f32,
 	score: u32
@@ -31,6 +35,7 @@ impl Game {
 			player: p,
 			pillars: vec![],
 			trail_nodes: vec![],
+			particle_systems: vec![],
 			car_texture: c_texture,
 			trail_timer: 0.0,
 			score: 0
@@ -45,12 +50,18 @@ impl Game {
 			p.draw(rl);
 		}
 
+		for ps in self.particle_systems.iter() {
+			ps.draw(rl);
+		}
+
 		self.player.draw(&self.car_texture, rl);
 
+
 		rl.draw_text(format!("Score: {}", self.score).as_str(), 400, 10, 20, RED_2);
-		//rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
-		//rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
-		//rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
+		rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
+		rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
+		rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
+		rl.draw_text(format!("Particle count: {}", self.get_particle_count()).as_str(), 10, 98, 20, CHARCOAL);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
@@ -59,6 +70,10 @@ impl Game {
 
 		self.remove_dead_trail_nodes(curr_time);
 		self.player.update(rl, dt);
+
+		for ps in self.particle_systems.iter_mut() {
+			ps.update(dt, curr_time);
+		}
 
 		if self.player.drifting {
 			self.place_trails(curr_time);
@@ -78,6 +93,18 @@ impl Game {
 		self.pillars.push( pillar::Pillar::new(p, r) );
 	}
 
+	pub fn add_dust_source(&mut self, pos: Vector2) {
+		self.particle_systems.push(dust_system::ParticleSystem::new(pos));
+	}
+
+	fn get_particle_count(&self) -> usize {
+		let mut total: usize = 0;
+		for ps in self.particle_systems.iter() {
+			total += ps.get_particle_count();
+		}
+		total
+	}
+
 	fn update_points(&mut self, dt: f32) {
 		let closest = self.get_closest_pillar_to_player();
 		if closest.1 <= POINT_DIST_THRESHOLD {
@@ -85,6 +112,7 @@ impl Game {
 		}
 	}
 
+	#[inline]
 	fn get_points_from_dist(&mut self, dt: f32, dist: f32) -> u32 {    // Gets the points scored from the distance to the peg
 		(dt * (POINT_DIST_THRESHOLD - dist) * MAX_POINTS_PER_FRAME as f32).ceil() as u32
 	}
@@ -142,6 +170,8 @@ fn main() {
 	g.add_pillar(Vector2 { x: 700.0 , y: 400.0 }, 7.0);
 	g.add_pillar(Vector2 { x: 500.0 , y: 300.0 }, 7.0);
 
+	g.add_dust_source(Vector2 { x: 400.0, y: 500.0 });
+
 	while !rl.window_should_close() {
 		g.update(&rl, rl.get_frame_time());
 
@@ -149,7 +179,7 @@ fn main() {
 		rl.clear_background(BG_COLOR);
 		g.draw(&rl);
 
-		//rl.draw_fps(10, 10);
+		rl.draw_fps(10, 10);
 		rl.end_drawing();
 	}
 }
