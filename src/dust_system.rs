@@ -1,10 +1,10 @@
 use raylib::{Vector2, RaylibHandle, consts::PI};
 use rand::Rng;
 
-use crate::{CHARCOAL, DRIFT_TRAIL_WIDTH, misc};
+use crate::{DRIFT_SMOKE, DRIFT_TRAIL_WIDTH, misc};
 
-const DUST_PARTICLE_MAX_LIFESPAN: f64 = 2.0;  // In seconds
-const DUST_PARTICLE_MIN_LIFESPAN: f64 = 1.0;  // In seconds
+const DUST_PARTICLE_MAX_LIFESPAN: f64 = 1.5;  // In seconds
+const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.5;  // In seconds
 
 pub const DUST_PARTICLES_EMM_RATE: f32 = 4.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
 const DUST_PARTICLES_EMM_RADIUS: f32 = DRIFT_TRAIL_WIDTH;
@@ -14,7 +14,9 @@ const DUST_PARTICLE_MAX_SPEED: f32 = 30.0;
 
 const DUST_PARTICLE_ANGULAR_VARIATION: f32 = PI as f32 * 2.0;
 
-const DUST_PARTICLE_RADIUS: f32 = 8.0;
+const DUST_PARTICLE_MAX_RAD: f32 = 10.0;
+const DUST_PARTICLE_MIN_RAD: f32 = 6.0;
+const DUST_PARTICLE_EXPANSION_RATE: f32 = 10.0;  // Pixels per second increase of radius
 
 const DUST_EMMISION_TIME: f32 = 0.01;
 
@@ -33,7 +35,7 @@ impl Default for Particle {
 		Particle {
 			pos: Vector2::zero(),
 			vel: Vector2::zero(),
-			radius: DUST_PARTICLE_RADIUS,
+			radius: 8.0,
 			time_created: 0.0,
 			lifespan: 1.0,
 			alpha: 255
@@ -42,10 +44,11 @@ impl Default for Particle {
 }
 
 impl Particle {
-	fn new(p: Vector2, v: Vector2, time: f64, life: f64) -> Particle {
+	fn new(p: Vector2, v: Vector2, time: f64, life: f64, rad: f32) -> Particle {
 		Particle {
 			pos: p,
 			vel: v,
+			radius: rad,
 			time_created: time,
 			lifespan: life,
 			..Default::default()
@@ -55,12 +58,12 @@ impl Particle {
 	fn update(&mut self, dt: f32, time: f64) {
 		let norm_life: f32 = (1.0 - (time - self.time_created)/self.lifespan) as f32;
 		self.alpha = (norm_life.powi(3) * 230.0).min(230.0).ceil() as u8;
-		self.radius = DUST_PARTICLE_RADIUS + (2.0 * DUST_PARTICLE_RADIUS * (1.0 - norm_life));
+		self.radius += dt * DUST_PARTICLE_EXPANSION_RATE;
 		self.pos += self.vel.scale_by(dt);
 	}
 
 	fn draw(&self, rl: &RaylibHandle) {
-		let mut col = CHARCOAL;
+		let mut col = DRIFT_SMOKE;
 		col.a = self.alpha;
 		rl.draw_circle_v(self.pos, self.radius, col);
 	}
@@ -128,7 +131,9 @@ impl ParticleSystem {
 
 		let pos = self.spawn_pos + Vector2 { x: random_thread.gen_range(0.0, DUST_PARTICLES_EMM_RADIUS), y: random_thread.gen_range(0.0, DUST_PARTICLES_EMM_RADIUS) };
 
-		self.particles.push( Particle::new(pos, vel, time, random_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN)) );
+		self.particles.push( Particle::new(pos, vel, time,
+													  random_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN),
+													  random_thread.gen_range(DUST_PARTICLE_MIN_RAD, DUST_PARTICLE_MAX_RAD)) );
 	}
 
 	#[inline]

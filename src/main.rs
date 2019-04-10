@@ -12,6 +12,7 @@ static BG_COLOR: Color = Color { r: 230, g: 230, b: 220, a: 255 };
 static RED_1: Color = Color { r: 190, g: 36, b: 25, a: 255 };
 static RED_2: Color = Color { r: 232, g: 89, b: 79, a: 255 };
 static CHARCOAL: Color = Color { r: 38, g: 38, b: 38, a: 255 };
+static DRIFT_SMOKE: Color = Color { r: 110, g: 110, b: 110, a: 255 };
 
 const POINT_DIST_THRESHOLD: f32 = 100.0;
 const DRIFT_TRAIL_WIDTH: f32 = 3.5;
@@ -31,7 +32,7 @@ struct Game {
 	score: u32
 }
 
-impl Game {
+impl<'a> Game {
 	pub fn new(p: car::Car, c_texture: Texture2D) -> Game {
 		Game {
 			player: p,
@@ -70,8 +71,8 @@ impl Game {
 		self.trail_timer += dt;
 		let curr_time = rl.get_time();
 
-		self.kill_dead_trail_nodes(curr_time);
 		self.kill_finished_particle_systems();
+		self.kill_dead_trail_nodes(curr_time);
 		self.player.update(rl, dt);
 
 		for ps in self.particle_systems.iter_mut() {
