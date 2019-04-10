@@ -1,4 +1,4 @@
-use raylib::{Color, Vector2, RaylibHandle, Texture2D};
+use raylib::{Color, Vector2, RaylibHandle, Texture2D, consts};
 
 mod car;
 mod drift_trail;
@@ -48,9 +48,9 @@ impl Game {
 		self.player.draw(&self.car_texture, rl);
 
 		rl.draw_text(format!("Score: {}", self.score).as_str(), 400, 10, 20, RED_2);
-		rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
-		rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
-		rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
+		//rl.draw_text(format!("Trail nodes: {}", self.trail_nodes.len()).as_str(), 10, 32, 20, CHARCOAL);
+		//rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
+		//rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
@@ -64,6 +64,14 @@ impl Game {
 			self.place_trails(curr_time);
 			self.update_points(dt);
 		}
+
+		if rl.is_key_pressed(consts::KEY_R as i32) { self.reload() }
+	}
+
+	fn reload(&mut self) {
+		self.player.reset();
+		self.trail_nodes = vec![];
+		self.score = 0;
 	}
 
 	pub fn add_pillar(&mut self, p: Vector2, r: f32) {
@@ -141,7 +149,7 @@ fn main() {
 		rl.clear_background(BG_COLOR);
 		g.draw(&rl);
 
-		rl.draw_fps(10, 10);
+		//rl.draw_fps(10, 10);
 		rl.end_drawing();
 	}
 }

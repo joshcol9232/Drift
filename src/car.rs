@@ -41,6 +41,14 @@ impl Car {
 		}
 	}
 
+	pub fn reset(&mut self) {
+		self.pos = Vector2 { x: 100.0, y: 600.0 };
+		self.vel = Vector2::zero();
+		self.angle = consts::PI as f32;
+		self.angular_vel = 0.0;
+		self.angular_acc = 0.0;
+	}
+
 	pub fn draw(&self, texture: &Texture2D, rl: &RaylibHandle) {
         rl.draw_texture_pro(texture,
                             Rectangle {
@@ -72,11 +80,6 @@ impl Car {
 			self.accelerate(dt, -1.0);
 		}
 
-		if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
-			self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
-			self.turn(dt, -rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32));
-		}
-
 		self.vel_mag = self.vel.length();
 		self.angular_acc = 0.0;
 
@@ -88,16 +91,28 @@ impl Car {
 			self.apply_resistance(dt);
 
 			if rl.is_key_down(consts::KEY_A as i32) {
-				self.angular_acc = (self.vel_mag/100.0).min(1.0);
+				self.angular_acc = (self.vel_mag/200.0).min(1.0);
 				self.turn(dt, self.angular_acc);
 			}
 			if rl.is_key_down(consts::KEY_D as i32) {
-				self.angular_acc = -(self.vel_mag/100.0).min(1.0);
+				self.angular_acc = -(self.vel_mag/200.0).min(1.0);
 				self.turn(dt, self.angular_acc);
 			}
 
 			if self.vel_mag < 0.2 {
 				self.vel = Vector2::zero();
+			}
+		}
+
+		if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {
+			self.accelerate(dt, ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0);
+			self.accelerate(dt, -((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, 2)) + 1.0)/2.0);  // Brake
+
+
+			let turn_amount = rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_LEFT_X as i32);
+			if turn_amount.abs() > 0.1 {
+				self.angular_acc = (self.vel_mag/200.0).min(1.0) * -turn_amount;
+				self.turn(dt, self.angular_acc);
 			}
 		}
 
