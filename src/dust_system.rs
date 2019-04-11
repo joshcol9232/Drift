@@ -1,24 +1,21 @@
 use raylib::{Vector2, RaylibHandle, consts::PI};
 use rand::Rng;
 
-use crate::{CHARCOAL, car::DRIFT_TRAIL_WIDTH, misc};
-use crate::drift_trail;
-use crate::car;
+use crate::{CHARCOAL, misc::get_components};
 
-const DUST_PARTICLE_MAX_LIFESPAN: f64 = 1.5;  // In seconds
+const DUST_PARTICLE_MAX_LIFESPAN: f64 = 1.0;  // In seconds
 const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.5;  // In seconds
 
-pub const DUST_PARTICLES_EMM_RATE: f32 = 200.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
-const DUST_PARTICLES_EMM_RADIUS: f32 = DRIFT_TRAIL_WIDTH;
+pub const DUST_PARTICLES_EMM_RATE: f32 = 300.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
 
 const DUST_PARTICLE_MIN_SPEED: f32 = 10.0;
 const DUST_PARTICLE_MAX_SPEED: f32 = 100.0;
 
 const DUST_PARTICLE_ANGULAR_VARIATION: f32 = PI as f32/4.0;
 
-const DUST_PARTICLE_MAX_RAD: f32 = 8.0;  // Starting radius
-const DUST_PARTICLE_MIN_RAD: f32 = 4.0;
-const DUST_PARTICLE_EXPANSION_RATE: f32 = 15.0;  // Pixels per second increase of radius
+const DUST_PARTICLE_MAX_RAD: f32 = 5.0;  // Starting radius
+const DUST_PARTICLE_MIN_RAD: f32 = 1.0;
+const DUST_PARTICLE_EXPANSION_RATE: f32 = 25.0;  // Pixels per second increase of radius
 
 struct Particle {
 	pos: Vector2,
@@ -56,7 +53,7 @@ impl Particle {
 
 	fn update(&mut self, dt: f32, time: f64) {
 		let norm_life: f32 = (1.0 - (time - self.time_created)/self.lifespan) as f32;
-		self.alpha = (norm_life * 230.0).ceil() as u8;
+		self.alpha = (norm_life.powi(3) * 230.0).ceil() as u8;
 		self.radius += dt * DUST_PARTICLE_EXPANSION_RATE;
 		self.pos += self.vel.scale_by(dt);
 	}
@@ -138,12 +135,10 @@ impl ParticleSystem {
 	}
 
 	fn spawn_single_particle(&mut self, time: f64) {
-		let vel = misc::get_components(self.rand_thread.gen_range(DUST_PARTICLE_MIN_SPEED, DUST_PARTICLE_MAX_SPEED),                   // Random speed
-												 self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION, DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
+		let vel = get_components(self.rand_thread.gen_range(DUST_PARTICLE_MIN_SPEED, DUST_PARTICLE_MAX_SPEED),                   // Random speed
+										 self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION, DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
 
-		let pos = self.spawn_pos + Vector2 { x: self.rand_thread.gen_range(0.0, DUST_PARTICLES_EMM_RADIUS), y: self.rand_thread.gen_range(0.0, DUST_PARTICLES_EMM_RADIUS) };
-
-		self.particles.push( Particle::new(pos, vel, time,
+		self.particles.push( Particle::new(self.spawn_pos, vel, time,
 													  self.rand_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN),
 													  self.rand_thread.gen_range(DUST_PARTICLE_MIN_RAD, DUST_PARTICLE_MAX_RAD)) );
 	}
@@ -155,51 +150,51 @@ impl ParticleSystem {
 }
 
 pub struct CarDustSystems {
-	pub left_back: ParticleSystem,
-	pub right_back: ParticleSystem
+	pub left: ParticleSystem,
+	pub right: ParticleSystem
 }
 
 impl CarDustSystems {
 	#[inline]
 	pub fn update(&mut self, dt: f32, time: f64) {
-		self.left_back.update(dt, time);
-		self.right_back.update(dt, time);
+		self.left.update(dt, time);
+		self.right.update(dt, time);
 	}
 
 	#[inline]
 	pub fn draw(&self, rl: &RaylibHandle) {
-		self.left_back.draw(rl);
-		self.right_back.draw(rl);
+		self.left.draw(rl);
+		self.right.draw(rl);
 	}
 
-	pub fn emit(&mut self, dt: f32, time: f64, player_pos: Vector2, player_ang: f32, rate_multiplier: f32, back_left_pos: Vector2, back_right_pos: Vector2) {
-		self.left_back.emit = true;
-		self.right_back.emit = true;
+	pub fn emit(&mut self, dt: f32, time: f64, player_ang: f32, rate_multiplier: f32, back_left_pos: Vector2, back_right_pos: Vector2) {
+		self.left.emit = true;
+		self.right.emit = true;
 
-		self.left_back.em_rate = DUST_PARTICLES_EMM_RATE * rate_multiplier;
-		self.right_back.em_rate = self.left_back.em_rate;
+		self.left.em_rate = DUST_PARTICLES_EMM_RATE * rate_multiplier;
+		self.right.em_rate = self.left.em_rate;
 
-		self.left_back.spawn_pos = back_left_pos;
-		self.right_back.spawn_pos = back_right_pos;
+		self.left.spawn_pos = back_left_pos;
+		self.right.spawn_pos = back_right_pos;
 
-		self.left_back.spawn_angle = player_ang + PI as f32;
-		self.right_back.spawn_angle = self.left_back.spawn_angle;
+		self.left.spawn_angle = player_ang + PI as f32;
+		self.right.spawn_angle = self.left.spawn_angle;
 
-		self.left_back.spawn_particles(dt, time);
-		self.right_back.spawn_particles(dt, time);
+		self.left.spawn_particles(dt, time);
+		self.right.spawn_particles(dt, time);
 	}
 
 	#[inline]
 	pub fn get_particle_count(&self) -> usize {
-		self.left_back.get_particle_count() + self.right_back.get_particle_count()
+		self.left.get_particle_count() + self.right.get_particle_count()
 	}
 }
 
 impl Default for CarDustSystems {
 	fn default() -> CarDustSystems {
 		CarDustSystems {
-			left_back: ParticleSystem::new(Vector2::zero(), 0.0),
-			right_back: ParticleSystem::new(Vector2::zero(), 0.0)
+			left: ParticleSystem::new(Vector2::zero(), 0.0),
+			right: ParticleSystem::new(Vector2::zero(), 0.0)
 		}
 	}
 }

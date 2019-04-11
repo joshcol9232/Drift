@@ -1,8 +1,5 @@
 use raylib::Vector2;
 
-use crate::misc;
-use crate::car::COM_OFF;
-
 pub struct DriftTrailSet {
 	pub left_front: Vector2,
 	pub right_front: Vector2,
@@ -24,7 +21,7 @@ impl Default for DriftTrailSet {
 }
 
 impl DriftTrailSet {
-	pub fn new(pos: Vector2, time: f64, wheel_positions: &[Vector2; 4]) -> DriftTrailSet {
+	pub fn new(time: f64, wheel_positions: &[Vector2; 4]) -> DriftTrailSet {
 		DriftTrailSet {
 			left_front: wheel_positions[0],
 			right_front: wheel_positions[1],

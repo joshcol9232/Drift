@@ -8,8 +8,6 @@ pub const CAR_W: f32 = 36.0;
 pub const CAR_H: f32 = 56.0;
 pub const HALF_CAR_W: f32 = CAR_W/2.0;
 pub const HALF_CAR_H: f32 = CAR_H/2.0;
-pub const TRAIL_DRAW_W: f32 = HALF_CAR_W - 2.0;   // Where trails are drawn relative to center
-pub const TRAIL_DRAW_H: f32 = HALF_CAR_H - 6.0;
 pub const COM_OFF: f32 = 8.0; // Centre of mass
 const BACK_WHEEL_X_OFF: f32 = 5.0;
 const BACK_WHEEL_Y_OFF: f32 = 15.0;
@@ -36,7 +34,8 @@ pub struct Car {
 	pub drifting: bool,
 
 	trail_nodes: Vec<drift_trail::DriftTrailSet>,
-	dust_sys: dust_system::CarDustSystems,
+	front_dust_sys: dust_system::CarDustSystems,
+	back_dust_sys: dust_system::CarDustSystems,
    trail_timer: f32,
 }
 
@@ -54,7 +53,8 @@ impl Default for Car {
 			drifting: false,
 
 			trail_nodes: vec![],
-			dust_sys: dust_system::CarDustSystems::default(),
+			front_dust_sys: dust_system::CarDustSystems::default(),
+			back_dust_sys: dust_system::CarDustSystems::default(),
 			trail_timer: 0.0,
 		}
 	}
@@ -80,7 +80,8 @@ impl Car {
 	pub fn draw(&self, texture: &Texture2D, rl: &RaylibHandle) {
 		self.draw_trails(rl, rl.get_time());
 
-		self.dust_sys.draw(rl);
+		self.front_dust_sys.draw(rl);
+		self.back_dust_sys.draw(rl);
 
 		rl.draw_texture_pro(texture,
                           Rectangle {
@@ -129,7 +130,8 @@ impl Car {
 
 		self.kill_dead_trail_nodes(curr_time);
 
-		self.dust_sys.update(dt, curr_time);
+		self.front_dust_sys.update(dt, curr_time);
+		self.back_dust_sys.update(dt, curr_time);
 
 		if self.vel_mag > 0.0 {
 			self.perp = self.get_perp_value();
@@ -153,11 +155,17 @@ impl Car {
 
 			if self.drifting {
 				let wheel_positions: [Vector2; 4] = self.get_wheel_positions();
-				self.dust_sys.emit(dt, curr_time, self.pos, self.angle, self.perp.abs(), wheel_positions[2], wheel_positions[3]);
+				
+				let dust_perp_mult = (self.perp.abs() - 0.3).powi(2) * 2.0;
+				if dust_perp_mult > 0.0 {
+					let dust_amount = dust_perp_mult * self.throttle.abs();
+					self.front_dust_sys.emit(dt, curr_time, self.angle, (dust_amount/5.0) * self.angular_acc.abs(), wheel_positions[0], wheel_positions[1]);
+					self.back_dust_sys.emit(dt, curr_time, self.angle, dust_amount, wheel_positions[2], wheel_positions[3]);
+				}
 				self.place_trails(curr_time, &wheel_positions);
-			} else if self.dust_sys.left_back.emit || self.dust_sys.right_back.emit {
-				self.dust_sys.left_back.emit = false;
-				self.dust_sys.right_back.emit = false;
+			} else if self.back_dust_sys.left.emit || self.back_dust_sys.right.emit {
+				self.back_dust_sys.left.emit = false;
+				self.back_dust_sys.right.emit = false;
 			}
 		}
 
@@ -227,7 +235,7 @@ impl Car {
 
 	fn place_trails(&mut self, time: f64, wheel_positions: &[Vector2; 4]) {
 		if self.trail_timer >= TRAIL_PLACEMENT_INTERVAL {
-			self.trail_nodes.push(drift_trail::DriftTrailSet::new(self.pos, time, wheel_positions));
+			self.trail_nodes.push(drift_trail::DriftTrailSet::new(time, wheel_positions));
 			self.trail_timer = 0.0;
 		}
 	}
@@ -238,7 +246,7 @@ impl Car {
 
 	#[inline]
 	pub fn get_particle_count(&self) -> usize {
-		self.dust_sys.get_particle_count()
+		self.front_dust_sys.get_particle_count() + self.back_dust_sys.get_particle_count()
 	}
 
 	#[inline]
