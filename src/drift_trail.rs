@@ -3,11 +3,6 @@ use raylib::Vector2;
 use crate::misc;
 use crate::car::COM_OFF;
 
-pub const BACK_WHEEL_X_OFF: f32 = 2.0;
-pub const BACK_WHEEL_Y_OFF: f32 = 7.0;
-pub const FRONT_WHEEL_X_OFF: f32 = 2.0;
-pub const FRONT_WHEEL_Y_OFF: f32 = 5.0;
-
 pub struct DriftTrailSet {
 	pub left_front: Vector2,
 	pub right_front: Vector2,
@@ -29,12 +24,12 @@ impl Default for DriftTrailSet {
 }
 
 impl DriftTrailSet {
-	pub fn new(pos: Vector2, half_w: f32, half_h: f32, rotation: f32, time: f64) -> DriftTrailSet {
+	pub fn new(pos: Vector2, time: f64, wheel_positions: &[Vector2; 4]) -> DriftTrailSet {
 		DriftTrailSet {
-			left_front: misc::rotate_vec(Vector2 { x: -half_w + FRONT_WHEEL_X_OFF, y: half_h - COM_OFF - FRONT_WHEEL_Y_OFF }, rotation) + pos,
-			right_front: misc::rotate_vec(Vector2 { x: half_w - FRONT_WHEEL_X_OFF, y: half_h - COM_OFF - FRONT_WHEEL_Y_OFF }, rotation) + pos,
-			left_back: misc::rotate_vec(Vector2 { x: -half_w + BACK_WHEEL_X_OFF, y: -half_h - COM_OFF + BACK_WHEEL_Y_OFF }, rotation) + pos,
-			right_back: misc::rotate_vec(Vector2 { x: half_w - BACK_WHEEL_X_OFF, y: -half_h - COM_OFF + BACK_WHEEL_Y_OFF }, rotation) + pos,
+			left_front: wheel_positions[0],
+			right_front: wheel_positions[1],
+			left_back: wheel_positions[2],
+			right_back: wheel_positions[3],
 			time_created: time
 		}
 	}
