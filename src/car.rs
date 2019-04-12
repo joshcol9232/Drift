@@ -17,7 +17,7 @@ const FRONT_WHEEL_Y_OFF: f32 = 8.0;
 const CAR_TURN_SPD: f32 = 7.0 * consts::PI as f32;
 const CAR_RESISTANCE: f32 = 2.718;
 const HALF_PI: f32 = (consts::PI/2.0) as f32;
-const TRAIL_DURATION: f64 = 3.5; // In seconds
+const TRAIL_DURATION: f64 = 2.0; // In seconds
 const TRAIL_PLACEMENT_INTERVAL: f32 = 0.007;  // Place a trail every x seconds.
 pub const DRIFT_TRAIL_WIDTH: f32 = 3.5;
 
@@ -156,12 +156,11 @@ impl Car {
 			if self.drifting {
 				let wheel_positions: [Vector2; 4] = self.get_wheel_positions();
 				
-				let dust_perp_mult = (self.perp.abs() - 0.3).powi(2) * 2.0;
-				if dust_perp_mult > 0.0 {
-					let dust_amount = dust_perp_mult * self.throttle.abs();
-					self.front_dust_sys.emit(dt, curr_time, self.angle, (dust_amount/5.0) * self.angular_acc.abs(), wheel_positions[0], wheel_positions[1]);
-					self.back_dust_sys.emit(dt, curr_time, self.angle, dust_amount, wheel_positions[2], wheel_positions[3]);
-				}
+				let dust_perp_mult = self.perp.abs().powi(2);
+				let dust_amount = dust_perp_mult * self.throttle.abs();
+				self.front_dust_sys.emit(dt, curr_time, self.angle, (dust_amount/3.0) * self.angular_acc.abs(), wheel_positions[0], wheel_positions[1]);
+				self.back_dust_sys.emit(dt, curr_time, self.angle, dust_amount, wheel_positions[2], wheel_positions[3]);
+
 				self.place_trails(curr_time, &wheel_positions);
 			} else if self.back_dust_sys.left.emit || self.back_dust_sys.right.emit {
 				self.back_dust_sys.left.emit = false;

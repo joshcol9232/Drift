@@ -3,8 +3,12 @@ use rand::Rng;
 
 use crate::{CHARCOAL, misc::get_components};
 
-const DUST_PARTICLE_MAX_LIFESPAN: f64 = 1.0;  // In seconds
-const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.5;  // In seconds
+const DUST_PARTICLE_MAX_RAD: f32 = 10.0;  // Starting radius
+const DUST_PARTICLE_MIN_RAD: f32 = 1.0;
+const DUST_PARTICLE_EXPANSION_RATE: f32 = 15.0;  // Pixels per second increase of radius
+
+const DUST_PARTICLE_MAX_LIFESPAN: f64 = 0.15;  // In seconds, per each 1 pixel of radius
+const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.08;  // In seconds
 
 pub const DUST_PARTICLES_EMM_RATE: f32 = 300.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
 
@@ -13,9 +17,6 @@ const DUST_PARTICLE_MAX_SPEED: f32 = 100.0;
 
 const DUST_PARTICLE_ANGULAR_VARIATION: f32 = PI as f32/4.0;
 
-const DUST_PARTICLE_MAX_RAD: f32 = 5.0;  // Starting radius
-const DUST_PARTICLE_MIN_RAD: f32 = 1.0;
-const DUST_PARTICLE_EXPANSION_RATE: f32 = 25.0;  // Pixels per second increase of radius
 
 struct Particle {
 	pos: Vector2,
@@ -46,14 +47,14 @@ impl Particle {
 			vel: v,
 			radius: rad,
 			time_created: time,
-			lifespan: life,
+			lifespan: life * rad as f64,
 			..Default::default()
 		}
 	}
 
 	fn update(&mut self, dt: f32, time: f64) {
 		let norm_life: f32 = (1.0 - (time - self.time_created)/self.lifespan) as f32;
-		self.alpha = (norm_life.powi(3) * 230.0).ceil() as u8;
+		self.alpha = (norm_life.powi(2) * 230.0).ceil() as u8;
 		self.radius += dt * DUST_PARTICLE_EXPANSION_RATE;
 		self.pos += self.vel.scale_by(dt);
 	}
@@ -68,6 +69,7 @@ impl Particle {
 pub struct ParticleSystem {
 	particles: Vec<Particle>,
 	pub emit: bool,
+	pub max_rad: f32,
 	em_rate: f32,
 	pub spawn_pos: Vector2,
 	pub spawn_angle: f32,
@@ -81,6 +83,7 @@ impl Default for ParticleSystem {
 			particles: vec![],
 			emit: false,
 			em_rate: DUST_PARTICLES_EMM_RATE,
+			max_rad: DUST_PARTICLE_MAX_RAD,
 			spawn_pos: Vector2::zero(),
 			spawn_angle: 0.0,
 			spawn_timer: 0.0,
@@ -138,9 +141,14 @@ impl ParticleSystem {
 		let vel = get_components(self.rand_thread.gen_range(DUST_PARTICLE_MIN_SPEED, DUST_PARTICLE_MAX_SPEED),                   // Random speed
 										 self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION, DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
 
+		let mut rad = DUST_PARTICLE_MIN_RAD;
+		if rad < self.max_rad {
+			rad = self.rand_thread.gen_range(DUST_PARTICLE_MIN_RAD, self.max_rad);
+		}
+
 		self.particles.push( Particle::new(self.spawn_pos, vel, time,
 													  self.rand_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN),
-													  self.rand_thread.gen_range(DUST_PARTICLE_MIN_RAD, DUST_PARTICLE_MAX_RAD)) );
+													  rad) );
 	}
 
 	#[inline]
@@ -173,6 +181,9 @@ impl CarDustSystems {
 
 		self.left.em_rate = DUST_PARTICLES_EMM_RATE * rate_multiplier;
 		self.right.em_rate = self.left.em_rate;
+
+		self.left.max_rad = (DUST_PARTICLE_MAX_RAD * rate_multiplier).max(0.5);
+		self.right.max_rad = self.left.max_rad;
 
 		self.left.spawn_pos = back_left_pos;
 		self.right.spawn_pos = back_right_pos;
