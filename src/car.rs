@@ -217,18 +217,16 @@ impl Car {
 	}
 
 	fn draw_trails(&self, rl: &RaylibHandle, time: f64) {
-		let mut last: &drift_trail::DriftTrailSet = &drift_trail::DriftTrailSet::default();
 		for (i, t) in self.trail_nodes.iter().enumerate() {
-			if i > 0 && last.left_front.distance_to(t.left_front) < 10.0 {
+			if i > 0 && self.trail_nodes[i-1].left_front.distance_to(t.left_front) < 10.0 {
 				let mut col = CHARCOAL;
 				col.a = ((3.0 * ((t.time_created - time)/TRAIL_DURATION) + 4.0).log2() * 255.0).min(255.0) as u8;  // Alpha value for this line
-				rl.draw_line_ex(last.left_front, t.left_front, DRIFT_TRAIL_WIDTH, col);  // Left front
-				rl.draw_line_ex(last.right_front, t.right_front, DRIFT_TRAIL_WIDTH, col);  // Right front
-				rl.draw_line_ex(last.left_back, t.left_back, DRIFT_TRAIL_WIDTH, col);  // Left back
-				rl.draw_line_ex(last.right_back, t.right_back, DRIFT_TRAIL_WIDTH, col);  // Right back
-			}
 
-			last = t;
+				rl.draw_line_ex(self.trail_nodes[i-1].left_front, t.left_front, DRIFT_TRAIL_WIDTH, col);  // Left front
+				rl.draw_line_ex(self.trail_nodes[i-1].right_front, t.right_front, DRIFT_TRAIL_WIDTH, col);  // Right front
+				rl.draw_line_ex(self.trail_nodes[i-1].left_back, t.left_back, DRIFT_TRAIL_WIDTH, col);  // Left back
+				rl.draw_line_ex(self.trail_nodes[i-1].right_back, t.right_back, DRIFT_TRAIL_WIDTH, col);  // Right back
+			}
 		}
 	}
 

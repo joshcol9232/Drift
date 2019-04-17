@@ -5,12 +5,8 @@ pub fn get_components(mag: f32, angle: f32) -> Vector2 {
 }
 
 pub fn rotate_vec(v: Vector2, angle: f32) -> Vector2 {
-	let mut temp = Vector2::zero();
 	let a_c = angle.cos();
 	let a_s = angle.sin();
 
-	temp.x = (v.x * a_c) - (v.y * a_s);
-	temp.y = (v.x * a_s) + (v.y * a_c);
-
-	temp
+	Vector2 { x: (v.x * a_c) - (v.y * a_s), y: (v.x * a_s) + (v.y * a_c) }
 }

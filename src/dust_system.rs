@@ -10,7 +10,7 @@ const DUST_PARTICLE_EXPANSION_RATE: f32 = 15.0;  // Pixels per second increase o
 const DUST_PARTICLE_MAX_LIFESPAN: f64 = 0.15;  // In seconds, per each 1 pixel of radius
 const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.08;  // In seconds
 
-pub const DUST_PARTICLES_EMM_RATE: f32 = 300.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
+pub const DUST_PARTICLES_EMM_RATE: f32 = 250.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
 
 const DUST_PARTICLE_MIN_SPEED: f32 = 10.0;
 const DUST_PARTICLE_MAX_SPEED: f32 = 100.0;
@@ -69,10 +69,10 @@ impl Particle {
 pub struct ParticleSystem {
 	particles: Vec<Particle>,
 	pub emit: bool,
-	pub max_rad: f32,
+	max_rad: f32,
 	em_rate: f32,
-	pub spawn_pos: Vector2,
-	pub spawn_angle: f32,
+	spawn_pos: Vector2,
+	spawn_angle: f32,
 	spawn_timer: f32,
 	rand_thread: rand::rngs::ThreadRng
 }

@@ -23,7 +23,7 @@ struct Game {
 	score: u32
 }
 
-impl<'a> Game {
+impl Game {
 	pub fn new(p: car::Car, c_texture: Texture2D) -> Game {
 		Game {
 			player: p,
@@ -42,9 +42,9 @@ impl<'a> Game {
 
 		rl.draw_text(format!("Score: {}", self.score).as_str(), 400, 10, 20, RED_2);
 		rl.draw_text(format!("Trail nodes: {}", self.player.get_trail_node_count()).as_str(), 10, 32, 20, CHARCOAL);
-		rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
-		rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
-		rl.draw_text(format!("Particle count: {}", self.player.get_particle_count()).as_str(), 10, 120, 20, CHARCOAL);
+		//rl.draw_text(format!("Player speed: {:.1}", self.player.vel_mag).as_str(), 10, 54, 20, CHARCOAL);
+		//rl.draw_text(format!("Player perp: {:.3}", self.player.perp).as_str(), 10, 76, 20, CHARCOAL);
+		//rl.draw_text(format!("Particle count: {}", self.player.get_particle_count()).as_str(), 10, 120, 20, CHARCOAL);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
