@@ -8,18 +8,6 @@ pub struct DriftTrailSet {
 	pub time_created: f64
 }
 
-impl Default for DriftTrailSet {
-	fn default() -> DriftTrailSet {   // For initializing stuff
-		DriftTrailSet {
-			left_front: Vector2 { x: -100.0, y: -100.0 },
-			right_front: Vector2 { x: -100.0, y: -100.0 },
-			left_back: Vector2 { x: -100.0, y: -100.0 },
-			right_back: Vector2 { x: -100.0, y: -100.0 },
-			time_created: 0.0
-		}
-	}
-}
-
 impl DriftTrailSet {
 	pub fn new(time: f64, wheel_positions: &[Vector2; 4]) -> DriftTrailSet {
 		DriftTrailSet {
