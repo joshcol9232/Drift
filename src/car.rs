@@ -124,6 +124,7 @@ impl Car {
 			self.throttle = 0.0;
 		}
 
+		/*
 		if rl.is_gamepad_available(consts::GAMEPAD_PLAYER1 as i32) {   // Stuff for xbox controllers goes in here
 			// Gets throttle as value from -1 to 1.
 			self.throttle = ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, consts::GAMEPAD_XBOX_AXIS_RT as i32)) + 1.0)/2.0 - ((rl.get_gamepad_axis_movement(consts::GAMEPAD_PLAYER1 as i32, 2)) + 1.0)/2.0;
@@ -136,6 +137,7 @@ impl Car {
 				self.turn(dt, self.angular_acc);
 			}
 		}
+		*/
 
 		self.vel_mag = self.vel.length();
 		self.angular_acc = 0.0;
