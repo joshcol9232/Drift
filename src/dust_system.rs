@@ -1,5 +1,6 @@
 use raylib::{Vector2, RaylibHandle, consts::PI};
-use rand::Rng;
+use rand::{rngs::ThreadRng, Rng};
+use rayon::prelude::*;
 
 use crate::{CHARCOAL, misc::get_components};
 
@@ -68,21 +69,21 @@ impl Particle {
 
 pub struct ParticleSystem {
 	particles: Vec<Particle>,
-	pub emit: bool,
 	max_rad: f32,
 	em_rate: f32,
+	em_period: f32,
 	spawn_pos: Vector2,
 	spawn_angle: f32,
 	spawn_timer: f32,
-	rand_thread: rand::rngs::ThreadRng
+	rand_thread: ThreadRng
 }
 
 impl Default for ParticleSystem {
 	fn default() -> ParticleSystem {
 		ParticleSystem {
 			particles: vec![],
-			emit: false,
 			em_rate: DUST_PARTICLES_EMM_RATE,
+			em_period: 1.0/DUST_PARTICLES_EMM_RATE,
 			max_rad: DUST_PARTICLE_MAX_RAD,
 			spawn_pos: Vector2::zero(),
 			spawn_angle: 0.0,
@@ -103,15 +104,10 @@ impl ParticleSystem {
 
 	pub fn update(&mut self, dt: f32, time: f64) {
 		self.spawn_timer += dt;
-
 		self.kill_particles(time);
-		if self.emit {
-			self.spawn_particles(dt, time);
-		}
 
-		for p in self.particles.iter_mut() {
-			p.update(dt, time);
-		}
+		self.particles.par_iter_mut()
+			.for_each(|p| p.update(dt, time));
 	}
 
 	pub fn draw(&self, rl: &RaylibHandle) {
@@ -127,7 +123,7 @@ impl ParticleSystem {
 
 	fn spawn_particles(&mut self, dt: f32, time: f64) {
 		let p_num = (self.em_rate * dt).floor() as u32;
-		if self.spawn_timer >= 1.0/self.em_rate {
+		if self.spawn_timer >= self.em_period {
 			self.spawn_timer = 0.0;
 			self.spawn_single_particle(time);
 		}
@@ -139,16 +135,20 @@ impl ParticleSystem {
 
 	fn spawn_single_particle(&mut self, time: f64) {
 		let vel = get_components(self.rand_thread.gen_range(DUST_PARTICLE_MIN_SPEED, DUST_PARTICLE_MAX_SPEED),                   // Random speed
-										 self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION, DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
+		self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION, DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
 
 		let mut rad = DUST_PARTICLE_MIN_RAD;
 		if rad < self.max_rad {
 			rad = self.rand_thread.gen_range(DUST_PARTICLE_MIN_RAD, self.max_rad);
 		}
 
-		self.particles.push( Particle::new(self.spawn_pos, vel, time,
-													  self.rand_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN),
-													  rad) );
+		self.particles.push(Particle::new(
+			self.spawn_pos,
+			vel,
+			time,
+			self.rand_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN),
+			rad)
+		);
 	}
 
 	#[inline]
@@ -176,9 +176,6 @@ impl CarDustSystems {
 	}
 
 	pub fn emit(&mut self, dt: f32, time: f64, player_ang: f32, rate_multiplier: f32, back_left_pos: Vector2, back_right_pos: Vector2) {
-		self.left.emit = true;
-		self.right.emit = true;
-
 		self.left.em_rate = DUST_PARTICLES_EMM_RATE * rate_multiplier;
 		self.right.em_rate = self.left.em_rate;
 

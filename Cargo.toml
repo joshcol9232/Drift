@@ -6,4 +6,5 @@ edition = "2018"
 
 [dependencies]
 raylib = "0.9"
-rand = "*"
+rand = "0.6.5"
+rayon = "1.0.3"

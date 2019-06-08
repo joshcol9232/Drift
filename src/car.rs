@@ -1,6 +1,12 @@
 use raylib::{consts, Vector2, RaylibHandle, Rectangle, Color, Texture2D};
 
-use crate::{misc, drift_trail, dust_system, CHARCOAL};
+use crate::{
+	misc,
+	drift_trail,
+	dust_system,
+	CHARCOAL,
+	traits::*,
+};
 
 const CAR_ACC: f32 = 500.0;
 
@@ -9,16 +15,15 @@ pub const CAR_H: f32 = 56.0;
 pub const HALF_CAR_W: f32 = CAR_W/2.0;
 pub const HALF_CAR_H: f32 = CAR_H/2.0;
 pub const COM_OFF: f32 = 8.0; // Centre of mass
-const BACK_WHEEL_X_OFF: f32 = 5.0;
+const WHEEL_X_OFF: f32 = 5.0;
 const BACK_WHEEL_Y_OFF: f32 = 15.0;
-const FRONT_WHEEL_X_OFF: f32 = 5.0;
 const FRONT_WHEEL_Y_OFF: f32 = 8.0;
 
 const CAR_TURN_SPD: f32 = 7.0 * consts::PI as f32;
 const CAR_RESISTANCE: f32 = 2.718;
 const HALF_PI: f32 = (consts::PI/2.0) as f32;
 const TRAIL_DURATION: f64 = 2.0; // In seconds
-const TRAIL_PLACEMENT_INTERVAL: f32 = 0.007;  // Place a trail every x seconds.
+const TRAIL_PLACEMENT_INTERVAL: f32 = 0.02; //0.007;  // Place a trail every x seconds.
 pub const DRIFT_TRAIL_WIDTH: f32 = 3.5;
 
 
@@ -32,17 +37,18 @@ pub struct Car {
 	angular_acc: f32,
 	pub perp: f32,   // How perpendicular the car is to it's velocity
 	pub drifting: bool,
+	texture: Texture2D,
 
 	trail_nodes: Vec<drift_trail::DriftTrailSet>,
 	front_dust_sys: dust_system::CarDustSystems,
 	back_dust_sys: dust_system::CarDustSystems,
-   trail_timer: f32,
+	trail_timer: f32,
 }
 
-impl Default for Car {
-	fn default() -> Car {
+impl Car {
+	pub fn new(rl: &RaylibHandle, p: Vector2) -> Car {
 		Car {
-			pos: Vector2::zero(),
+			pos: p,
 			vel: Vector2::zero(),
 			vel_mag: 0.0,
 			throttle: 0.0,
@@ -51,20 +57,12 @@ impl Default for Car {
 			angular_acc: 0.0,
 			perp: 0.0,
 			drifting: false,
+			texture: rl.load_texture("textures/car/car_body.png"),
 
 			trail_nodes: vec![],
 			front_dust_sys: dust_system::CarDustSystems::default(),
 			back_dust_sys: dust_system::CarDustSystems::default(),
 			trail_timer: 0.0,
-		}
-	}
-}
-
-impl Car {
-	pub fn new(p: Vector2) -> Car {
-		Car {
-			pos: p,
-			..Default::default()
 		}
 	}
 
@@ -75,34 +73,6 @@ impl Car {
 		self.angle = consts::PI as f32;
 		self.angular_vel = 0.0;
 		self.angular_acc = 0.0;
-	}
-
-	pub fn draw(&self, texture: &Texture2D, rl: &RaylibHandle) {
-		self.draw_trails(rl, rl.get_time());
-
-		self.front_dust_sys.draw(rl);
-		self.back_dust_sys.draw(rl);
-
-		rl.draw_texture_pro(texture,
-                          Rectangle {
-                              x: 0.0,
-                              y: 0.0,
-                              width: CAR_W,
-                              height: CAR_H
-                          },
-                          Rectangle {
-                              x: self.pos.x,
-                              y: self.pos.y,
-                              width: CAR_W,
-                              height: CAR_H
-                          },
-                          Vector2 {
-                              x: HALF_CAR_W,
-                              y: HALF_CAR_H + COM_OFF
-                          },
-                          -self.angle * consts::RAD2DEG as f32,
-                          Color::WHITE
-		);
 	}
 
 	pub fn update(&mut self, rl: &RaylibHandle, dt: f32) {
@@ -149,7 +119,6 @@ impl Car {
 
 		if self.vel_mag > 0.0 {
 			self.perp = self.get_perp_value();
-
 			self.drifting = self.perp.abs() > 0.35 && self.vel_mag > 10.0;
 
 			self.apply_resistance(dt);
@@ -163,10 +132,6 @@ impl Car {
 				self.turn(dt, self.angular_acc);
 			}
 
-			if self.vel_mag < 0.2 {
-				self.vel = Vector2::zero();
-			}
-
 			if self.drifting {
 				let wheel_positions: [Vector2; 4] = self.get_wheel_positions();
 				
@@ -176,22 +141,21 @@ impl Car {
 				self.back_dust_sys.emit(dt, curr_time, self.angle, dust_amount, wheel_positions[2], wheel_positions[3]);
 
 				self.place_trails(curr_time, &wheel_positions);
-			} else if self.back_dust_sys.left.emit || self.back_dust_sys.right.emit {
-				self.back_dust_sys.left.emit = false;
-				self.back_dust_sys.right.emit = false;
 			}
+
+			self.pos = self.pos + self.vel.scale_by(dt);
 		}
 
 		self.angle += self.angular_vel * dt;
-		
-		self.pos = self.pos + self.vel.scale_by(dt);
 	}
 
+	#[inline]
 	fn accelerate(&mut self, dt: f32, power: f32) {
 		let dv = dt * power * CAR_ACC;
 		self.vel += misc::get_components(dv, self.angle);
 	}
 
+	#[inline]
 	fn turn(&mut self, dt: f32, amount: f32) {
 		self.angular_vel += dt * amount * CAR_TURN_SPD;
 	}
@@ -212,13 +176,13 @@ impl Car {
 	}
 
 	fn get_wheel_positions(&self) -> [Vector2; 4] {
-		[misc::rotate_vec(Vector2 { x: -HALF_CAR_W + FRONT_WHEEL_X_OFF, y: HALF_CAR_H - COM_OFF - FRONT_WHEEL_Y_OFF }, -self.angle) + self.pos, // Left front
-		 misc::rotate_vec(Vector2 { x: HALF_CAR_W - FRONT_WHEEL_X_OFF, y: HALF_CAR_H - COM_OFF - FRONT_WHEEL_Y_OFF }, -self.angle) + self.pos,  // Right front
-		 misc::rotate_vec(Vector2 { x: -HALF_CAR_W + BACK_WHEEL_X_OFF, y: -HALF_CAR_H - COM_OFF + BACK_WHEEL_Y_OFF }, -self.angle) + self.pos,  // Left back
-		 misc::rotate_vec(Vector2 { x: HALF_CAR_W - BACK_WHEEL_X_OFF, y: -HALF_CAR_H - COM_OFF + BACK_WHEEL_Y_OFF }, -self.angle) + self.pos]   // Right back
+		[misc::rotate_vec(Vector2 { x: -HALF_CAR_W + WHEEL_X_OFF, y: HALF_CAR_H - COM_OFF - FRONT_WHEEL_Y_OFF }, -self.angle) + self.pos, // Left front
+		 misc::rotate_vec(Vector2 { x: HALF_CAR_W - WHEEL_X_OFF, y: HALF_CAR_H - COM_OFF - FRONT_WHEEL_Y_OFF }, -self.angle) + self.pos,  // Right front
+		 misc::rotate_vec(Vector2 { x: -HALF_CAR_W + WHEEL_X_OFF, y: -HALF_CAR_H - COM_OFF + BACK_WHEEL_Y_OFF }, -self.angle) + self.pos,  // Left back
+		 misc::rotate_vec(Vector2 { x: HALF_CAR_W - WHEEL_X_OFF, y: -HALF_CAR_H - COM_OFF + BACK_WHEEL_Y_OFF }, -self.angle) + self.pos]   // Right back
 	}
 
-	fn draw_trails(&self, rl: &RaylibHandle, time: f64) {
+	pub fn draw_trails(&self, rl: &RaylibHandle, time: f64) {
 		for (i, t) in self.trail_nodes.iter().enumerate() {
 			if i > 0 && self.trail_nodes[i-1].left_front.distance_to(t.left_front) < 10.0 {
 				let mut col = CHARCOAL;
@@ -235,10 +199,11 @@ impl Car {
 	fn place_trails(&mut self, time: f64, wheel_positions: &[Vector2; 4]) {
 		if self.trail_timer >= TRAIL_PLACEMENT_INTERVAL {
 			self.trail_nodes.push(drift_trail::DriftTrailSet::new(time, wheel_positions));
-			self.trail_timer = 0.0;
+			self.trail_timer -= TRAIL_PLACEMENT_INTERVAL;
 		}
 	}
 
+	#[inline]
 	fn kill_dead_trail_nodes(&mut self, time: f64) {
 		self.trail_nodes.retain(|i|time - i.time_created <= TRAIL_DURATION);
 	}
@@ -251,5 +216,34 @@ impl Car {
 	#[inline]
 	pub fn get_trail_node_count(&self) -> usize {
 		self.trail_nodes.len()
+	}
+}
+
+impl Drawable for Car {
+	fn draw(&self, rl: &RaylibHandle) {
+		self.front_dust_sys.draw(rl);
+		self.back_dust_sys.draw(rl);
+
+		rl.draw_texture_pro(
+			&self.texture,
+            Rectangle {
+				x: 0.0,
+				y: 0.0,
+				width: CAR_W,
+				height: CAR_H
+			},
+			Rectangle {
+				x: self.pos.x,
+				y: self.pos.y,
+				width: CAR_W,
+				height: CAR_H
+			},
+			Vector2 {
+				x: HALF_CAR_W,
+				y: HALF_CAR_H + COM_OFF
+			},
+			-self.angle * consts::RAD2DEG as f32,
+			Color::WHITE
+		);
 	}
 }
