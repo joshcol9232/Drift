@@ -21,8 +21,15 @@ pub fn get_angle_to(from: &Vector2, to: &Vector2) -> f32 {
 
 // For 0 -> 2pi range. Returns reflex angles too
 pub fn get_angle_diff(target: f32, current: f32) -> f32 {
-	let a = (target - current) % TWO_PI;
-	let b = (current - target) % TWO_PI;
+	let mut diff = target - current;
 
-	if a < b { println!("returning a"); -a } else { println!("returning b"); b }
+	if diff > consts::PI as f32 {
+		diff -= TWO_PI;
+		println!("Taking off {}", diff);
+	} else if diff < -consts::PI as f32 {
+		diff += TWO_PI;
+		println!("Adding on {}", diff);
+	}
+
+	diff
 }

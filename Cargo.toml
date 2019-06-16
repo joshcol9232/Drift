@@ -5,6 +5,6 @@ authors = ["Josh <joshuacolclough2@googlemail.com>"]
 edition = "2018"
 
 [dependencies]
-raylib = "0.9"
+raylib = "0.9.1"
 rand = "0.6.5"
 rayon = "1.0.3"

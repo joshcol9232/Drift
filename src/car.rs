@@ -1,4 +1,5 @@
 use raylib::{consts, Vector2, RaylibHandle, Rectangle, Color, Texture2D};
+use std::f32::consts::E;
 
 use crate::{
 	misc,
@@ -20,11 +21,13 @@ const BACK_WHEEL_Y_OFF: f32 = 15.0;
 const FRONT_WHEEL_Y_OFF: f32 = 8.0;
 
 const CAR_TURN_SPD: f32 = 7.0 * consts::PI as f32;
-const CAR_RESISTANCE: f32 = 2.718;
 const HALF_PI: f32 = (consts::PI/2.0) as f32;
 const TRAIL_DURATION: f64 = 2.0; // In seconds
 const TRAIL_PLACEMENT_INTERVAL: f32 = 0.02; //0.007;  // Place a trail every x seconds.
 pub const DRIFT_TRAIL_WIDTH: f32 = 3.5;
+
+const ANGULAR_VEL_DECAY_CONST: f32 = 10.0;
+const CAR_RESISTANCE: f32 = 1.0;
 
 
 pub struct Car {
@@ -117,18 +120,18 @@ impl Car {
 		self.front_dust_sys.update(dt, curr_time);
 		self.back_dust_sys.update(dt, curr_time);
 
-		if self.vel_mag > 0.0 {
+		if self.vel_mag > 1.0 {
 			self.perp = self.get_perp_value();
 			self.drifting = self.perp.abs() > 0.35 && self.vel_mag > 10.0;
 
 			self.apply_resistance(dt);
 
 			if rl.is_key_down(consts::KEY_A as i32) {
-				self.angular_acc = (self.vel_mag/200.0).min(1.0);
+				self.angular_acc += (self.vel_mag/200.0).min(1.0);
 				self.turn(dt, self.angular_acc);
 			}
 			if rl.is_key_down(consts::KEY_D as i32) {
-				self.angular_acc = -(self.vel_mag/200.0).min(1.0);
+				self.angular_acc -= (self.vel_mag/200.0).min(1.0);
 				self.turn(dt, self.angular_acc);
 			}
 
@@ -140,11 +143,15 @@ impl Car {
 				self.front_dust_sys.emit(dt, curr_time, self.angle, (dust_amount/3.0) * self.angular_acc.abs(), wheel_positions[0], wheel_positions[1]);
 				self.back_dust_sys.emit(dt, curr_time, self.angle, dust_amount, wheel_positions[2], wheel_positions[3]);
 
-				self.place_trails(curr_time, &wheel_positions);
 			}
 
-			self.pos = self.pos + self.vel.scale_by(dt);
+			let wheel_positions: [Vector2; 4] = self.get_wheel_positions();
+			self.place_trails(curr_time, &wheel_positions);
+		} else {
+			self.vel = Vector2::zero();
 		}
+
+		self.pos = self.pos + self.vel.scale_by(dt);
 
 		self.angle += self.angular_vel * dt;
 	}
@@ -161,13 +168,14 @@ impl Car {
 	}
 
 	fn apply_resistance(&mut self, dt: f32) {
-		self.angular_vel *= (100.0 as f32).powf(-dt * (2.0 - self.perp.abs()));
+		self.angular_vel *= E.powf(dt * (1.2 - self.perp.abs()) * -ANGULAR_VEL_DECAY_CONST);	
 
-		let d_hor_v = -self.perp * dt * 500.0;
-		let ang = self.angle + HALF_PI; // Angle perpendicular to car to apply resistive vel on
+		let d_hor_v = -self.perp as f64 * dt as f64 * 500.0;
+		let ang = self.angle as f64 + HALF_PI as f64; // Angle perpendicular to car to apply resistive vel on
+		println!("d_hor_v: {}, perp: {}", d_hor_v, self.perp);
 
-		self.vel += Vector2 { x: d_hor_v * ang.sin(), y: d_hor_v * ang.cos() };
-		self.vel.scale(CAR_RESISTANCE.powf(-dt));   // All deceleration
+		self.vel += Vector2 { x: (d_hor_v * ang.sin()) as f32, y: (d_hor_v * ang.cos()) as f32 };
+		self.vel *= E.powf(-dt * CAR_RESISTANCE);   // All deceleration
 	}
 
 	fn get_perp_value(&self) -> f32 {
