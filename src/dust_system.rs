@@ -134,19 +134,19 @@ impl ParticleSystem {
 	}
 
 	fn spawn_single_particle(&mut self, time: f64) {
-		let vel = get_components(self.rand_thread.gen_range(DUST_PARTICLE_MIN_SPEED, DUST_PARTICLE_MAX_SPEED),                   // Random speed
-		self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION, DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
+		let vel = get_components(self.rand_thread.gen_range(DUST_PARTICLE_MIN_SPEED..DUST_PARTICLE_MAX_SPEED),                   // Random speed
+		self.spawn_angle + self.rand_thread.gen_range(-DUST_PARTICLE_ANGULAR_VARIATION..DUST_PARTICLE_ANGULAR_VARIATION)); // Random angle
 
 		let mut rad = DUST_PARTICLE_MIN_RAD;
 		if rad < self.max_rad {
-			rad = self.rand_thread.gen_range(DUST_PARTICLE_MIN_RAD, self.max_rad);
+			rad = self.rand_thread.gen_range(DUST_PARTICLE_MIN_RAD..self.max_rad);
 		}
 
 		self.particles.push(Particle::new(
 			self.spawn_pos,
 			vel,
 			time,
-			self.rand_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN, DUST_PARTICLE_MAX_LIFESPAN),
+			self.rand_thread.gen_range(DUST_PARTICLE_MIN_LIFESPAN..DUST_PARTICLE_MAX_LIFESPAN),
 			rad)
 		);
 	}
