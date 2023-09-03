@@ -8,10 +8,10 @@ const DUST_PARTICLE_MAX_RAD: f32 = 10.0;  // Starting radius
 const DUST_PARTICLE_MIN_RAD: f32 = 1.0;
 const DUST_PARTICLE_EXPANSION_RATE: f32 = 15.0;  // Pixels per second increase of radius
 
-const DUST_PARTICLE_MAX_LIFESPAN: f64 = 0.15;  // In seconds, per each 1 pixel of radius
+const DUST_PARTICLE_MAX_LIFESPAN: f64 = 0.25;  // In seconds, per each 1 pixel of radius
 const DUST_PARTICLE_MIN_LIFESPAN: f64 = 0.08;  // In seconds
 
-pub const DUST_PARTICLES_EMM_RATE: f32 = 250.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
+pub const DUST_PARTICLES_EMM_RATE: f32 = 500.0; // How many emitted per sec, for every pixel per second the player is moving at, and the acceleration multiplier
 
 const DUST_PARTICLE_MIN_SPEED: f32 = 10.0;
 const DUST_PARTICLE_MAX_SPEED: f32 = 100.0;
